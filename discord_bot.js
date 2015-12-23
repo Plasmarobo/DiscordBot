@@ -81,38 +81,40 @@ var commands = {
     "pullanddeploy": {
         description: "bot will perform a git pull master and restart with the new code",
         process: function(bot,msg,suffix) {
-            bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
-                console.log("updating...");
-	            var spawn = require('child_process').spawn;
-                var log = function(err,stdout,stderr){
-                    if(stdout){console.log(stdout);}
-                    if(stderr){console.log(stderr);}
-                };
-                var fetch = spawn('git', ['fetch']);
-                fetch.stdout.on('data',function(data){
-                    console.log(data.toString());
-                });
-                fetch.on("close",function(code){
-                    var reset = spawn('git', ['reset','--hard','origin/master']);
-                    reset.stdout.on('data',function(data){
-                        console.log(data.toString());
-                    });
-                    reset.on("close",function(code){
-                        var npm = spawn('npm', ['install']);
-                        npm.stdout.on('data',function(data){
-                            console.log(data.toString());
-                        });
-                        npm.on("close",function(code){
-                            console.log("goodbye");
-                            bot.sendMessage(msg.channel,"brb!",function(){
-                                bot.logout(function(){
-                                    process.exit();
-                                });
-                            });
-                        });
-                    });
-                });
-            });
+            
+              bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
+                  console.log("updating...");
+  	            var spawn = require('child_process').spawn;
+                  var log = function(err,stdout,stderr){
+                      if(stdout){console.log(stdout);}
+                      if(stderr){console.log(stderr);}
+                  };
+                  var fetch = spawn('git', ['fetch']);
+                  fetch.stdout.on('data',function(data){
+                      console.log(data.toString());
+                  });
+                  fetch.on("close",function(code){
+                      var reset = spawn('git', ['reset','--hard','origin/master']);
+                      reset.stdout.on('data',function(data){
+                          console.log(data.toString());
+                      });
+                      reset.on("close",function(code){
+                          var npm = spawn('npm', ['install']);
+                          npm.stdout.on('data',function(data){
+                              console.log(data.toString());
+                          });
+                          npm.on("close",function(code){
+                              console.log("goodbye");
+                              bot.sendMessage(msg.channel,"brb!",function(){
+                                  bot.logout(function(){
+                                      process.exit();
+                                  });
+                              });
+                          });
+                      });
+                  });
+              });
+            
         }
     },
     "version": {
@@ -233,7 +235,14 @@ var commands = {
 			updateMessagebox();
 			bot.sendMessage(msg.channel,"message saved.")
 		}
-	}
+	},
+  "say hello": {
+    usage: "",
+    description: "says hello!",
+    process: function(bot,msg,suffix) {
+      bot.sendMessage(msg.channel,"Hello!")
+    }
+  }
 };
 
 
@@ -283,8 +292,6 @@ function load_plugins(){
 	console.log("Loaded " + Object.keys(commands).length + " chat commands type !help in Discord for a commands list.")
 }
 
-
-
 var bot = new Discord.Client();
 
 bot.on("ready", function () {
@@ -292,16 +299,8 @@ bot.on("ready", function () {
 	load_plugins();
 });
 
-bot.on("disconnected", function () {
-
-	console.log("Disconnected!");
-	process.exit(1); //exit node.js with an error
-	
-});
-
 bot.on("message", function (msg) {
 	//check if message is a command
-  console.log('MSG: \"%s\"" by %s', msg.content, msg.author);
   var flips = msg.content.match(/(\(╯°□°\）╯︵ ┻━┻)/g);
   {
     if(flips != null)
@@ -314,18 +313,18 @@ bot.on("message", function (msg) {
     }
   }
 	if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
-        console.log("treating " + msg.content + " from " + msg.author + " as command");
+    console.log("treating " + msg.content + " from " + msg.author + " as command");
 		var cmdTxt = msg.content.split(" ")[0].substring(1);
-        var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
-        if(msg.content.indexOf(bot.user.mention()) == 0){
-			try {
-				cmdTxt = msg.content.split(" ")[1];
-				suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
-			} catch(e){ //no command
-				bot.sendMessage(msg.channel,"Yes?");
-				return;
-			}
-        }
+      var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
+      if(msg.content.indexOf(bot.user.mention()) == 0){
+  			try {
+  				cmdTxt = msg.content.split(" ")[1];
+  				suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
+  			} catch(e){ //no command
+  				bot.sendMessage(msg.channel,"Yes?");
+  				return;
+  			}
+      }
 		alias = aliases[cmdTxt];
 		if(alias){
 			cmdTxt = alias[0];
@@ -395,41 +394,14 @@ bot.on("presence", function(user,status,gameId) {
 	}catch(e){}
 });
 
-function get_gif(tags, func) {
-        //limit=1 will only return 1 gif
-        var params = {
-            "api_key": config.api_key,
-            "rating": config.rating,
-            "format": "json",
-            "limit": 1
-        };
-        var query = qs.stringify(params);
-
-        if (tags !== null) {
-            query += "&q=" + tags.join('+')
-        }
-
-        //wouldnt see request lib if defined at the top for some reason:\
-        var request = require("request");
-        //console.log(query)
-
-        request(config.url + "?" + query, function (error, response, body) {
-            //console.log(arguments)
-            if (error || response.statusCode !== 200) {
-                console.error("giphy: Got error: " + body);
-                console.log(error);
-                //console.log(response)
-            }
-            else {
-                var responseObj = JSON.parse(body)
-                console.log(responseObj.data[0])
-                if(responseObj.data.length){
-                    func(responseObj.data[0].id);
-                } else {
-                    func(undefined);
-                }
-            }
-        }.bind(this));
+bot.on('disconnected', function(){
+  console.log("Disconnected, attempting reconnect");
+  bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
+    if(error)
+    {
+      console.log("Could not login: " + error);
     }
+  });
+});
 
 bot.login(AuthDetails.email, AuthDetails.password);
