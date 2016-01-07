@@ -1,12 +1,18 @@
 var Discord = require("discord.js");
 
 // Get the email and password
-var AuthDetails = {};
+try {
+  var AuthDetails = require("./auth.json");
+} catch (e){
+  console.log("Please create an auth.json like auth.json.example with at least an email and password.");
+  process.exit();
+}
 //instead of MAD INSECURE auth.json
 //use environment variables like a sane fucking person
-AuthDetails.email = process.env.DISCORD_EMAIL;
+//AuthDetails.email = process.env.DISCORD_EMAIL;
 //stiiiiill insecure
-AuthDetails.password = process.env.DISCORD_PASSWORD;
+//AuthDetails.password = process.env.DISCORD_PASSWORD;
+
 
 
 var Permissions = {};
