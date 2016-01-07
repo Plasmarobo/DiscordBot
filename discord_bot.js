@@ -1,12 +1,13 @@
 var Discord = require("discord.js");
 
 // Get the email and password
-var AuthDetails = {};
+var AuthDetails = require("auth.json");
 //instead of MAD INSECURE auth.json
 //use environment variables like a sane fucking person
-AuthDetails.email = process.env.DISCORD_EMAIL;
+//AuthDetails.email = process.env.DISCORD_EMAIL;
 //stiiiiill insecure
-AuthDetails.password = process.env.DISCORD_PASSWORD;
+//AuthDetails.password = process.env.DISCORD_PASSWORD;
+
 
 
 var Permissions = {};
@@ -396,7 +397,7 @@ bot.on("presence", function(user,status,gameId) {
 
 bot.on('disconnected', function(){
   console.log("Disconnected, attempting reconnect");
-  bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
+  bot.login(AuthDetails["email"], AuthDetails["password"], function(error, token){
     if(error)
     {
       console.log("Could not login: " + error);
