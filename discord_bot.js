@@ -393,15 +393,27 @@ bot.on("presence", function(user,status,gameId) {
 	}
 	}catch(e){}
 });
-
+var retries = 5;
 bot.on('disconnected', function(){
   console.log("Disconnected, attempting reconnect");
+  if(retries > 0)
+  {
+  setTimeout(function(){
+  
   bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
     if(error)
     {
       console.log("Could not login: " + error);
     }
   });
+}, 5000);
+  retries = retries - 1;
+}
+else
+{
+  console.log("Retried 5 times... exiting");
+  process.exit();
+}
 });
 
 bot.login(AuthDetails.email, AuthDetails.password);
