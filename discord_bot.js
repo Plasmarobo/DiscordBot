@@ -411,6 +411,10 @@ bot.on('disconnected', function(){
     {
       console.log("Could not login: " + error);
     }
+    else
+    {
+      retries = 5;
+    }
   });
 }, 5000);
   retries = retries - 1;
