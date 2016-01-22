@@ -400,30 +400,34 @@ bot.on("presence", function(user,status,gameId) {
 	}catch(e){}
 });
 var retries = 5;
-bot.on('disconnected', function(){
-  console.log("Disconnected, attempting reconnect");
-  if(retries > 0)
-  {
-  setTimeout(function(){
-  
+
+function retry_login()
+{
+  console.log("Attempts remaining: " + retries);
+  retries = retries - 1;
   bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
     if(error)
     {
-      console.log("Could not login: " + error);
+      console.log("Error logging in: " + error);
+      if(retries > 0)
+      {
+        setTimeout(retry, 5000);
+      }
+      else
+      {
+        process.exit();
+      }
     }
     else
     {
       retries = 5;
     }
   });
-}, 5000);
-  retries = retries - 1;
-}
-else
-{
-  console.log("Retried 5 times... exiting");
-  process.exit();
-}
+};
+
+bot.on('disconnected', function(){
+  console.log("Disconnected...");
+  retry_login();
 });
 
 bot.login(AuthDetails.email, AuthDetails.password);
