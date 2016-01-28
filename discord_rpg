@@ -1,0 +1,438 @@
+function World()
+{
+  this.next_id = 0;
+  this.NewId = function()
+  {
+    var id = this.next_id;
+    this.next_id += 1;
+    return id;
+  }
+
+  this.game_objects = {};
+  this.Register = function(id, thing)
+  {
+    this.game_objects[id] = thing;
+  }
+
+  this.Lookup = function(list, selector, field)
+  {
+    var results = [];
+    if(!field || field == "id")
+    {
+      results.push(game_objects[selector]);
+    }
+    else
+    {
+      for (var item in list)
+      {
+        if(item.hasOwnProperty(field))
+        {
+          if(item[field] == selector)
+          {
+            results.push(item);
+          }
+        }
+      }
+    }
+    return results;
+  }
+
+  this.players = {}; //By USERID
+  this.GetPlayersById = function(id){return this.Lookup(this.players, id);};
+  this.GetPlayersByName = function(name){return this.Lookup(this.players,name, "name");};
+  this.GetPlayersByUserId = function(userid){return this.Lookup(this.players, userid, "userid");};
+  this.GetPlayersByLocation = function(location){return this.Lookup(this.players, location, "location");};
+
+  this.monsters = {}; //By ID
+  this.GetMonstersById = function(id){return this.Lookup(this.monsters, id);};
+  this.GetMonstersByName = function(name){return this.Lookup(this.monsters, name, "name");};
+  this.GetMonstersByKind = function(kind){return this.Lookup(this.monsters, kind, "kind");};
+  this.GetMonstersByLocation = function(location){return this.Lookup(this.monsters, location, "location");};
+
+  this.npcs = {}; //By ID
+  this.GetNpcsById = function(id){return this.Lookup(this.npcs, id);};
+  this.GetNpcsByName = function(name){return this.Lookup(this.npcs, name, "name");};
+  this.GetNpcsByLocation = function(location){return this.Lookup(this.npcs, location, "location");};
+
+  this.items = {}; //By ID
+  this.GetItemsById = function(id){return this.Lookup(this.items, id);};
+  this.GetItemsByName = function(name){return this.Lookup(this.items, name, "name");};
+  this.GetItemsByLocation = function(location){return this.Lookup(this.items, location, "location");};
+  this.GetItemsByOwner = function(container){return this.Lookup(this.items, container,"container");};
+  this.GetItemByKind = function(kind){return this.Lookup(this.items, kind, "kind");};
+
+  this.item_kinds = [
+                    //Equipment
+                    "hand",
+                    "arm",
+                    "leg",
+                    "feet",
+                    "chest",
+                    "head",
+                    "neck",
+                    "waist",
+                    "bracelet",
+                    "ring",
+                    //Consumables
+                    "potion",
+                    "scroll",
+                    "food",
+                    ///Misc
+                    "book",
+                    "misc"
+                    ];
+
+  this.locations = {}; //By ID
+  this.GetLocationsById = function(id){return this.Lookup(this.locations, id);};
+  this.GetLocationsByName = function(name){return this.Lookup(this.locations, name, "name");};
+
+  this.doors = {}; //By ID
+  this.GetDoorById = function(id){return this.Lookup(this.doors, id);};
+  this.GetDoorsByLocked = function(locked){this.Lookup(this.doors, locked, "locked");};
+
+  this.turn = 0;
+  this.timeouts = {};
+  //Commands
+  this.verbs = {
+    "help"      : this.Help,
+    "move"      : this.Move,
+    "go"        : this.Move,
+    "inspect"   : this.Describe,
+    "look at"   : this.Describe,
+    "check"     : this.Describe,
+    "describe"  : this.Describe,
+    "read"      : this.Read,
+    "search"    : this.Search,
+    "use"       : this.Use,
+    "attack"    : this.Attack,
+    "equip"     : this.Equip,
+    "remove"    : this.Equip,
+    "inventory" : this.Inventory,
+    "skill"     : this.Skill,
+    "take"      : this.Take,
+    "pickup"    : this.Take,
+    "get"       : this.Take,
+    "drop"      : this.Drop,
+    "toggle"    : this.Toggle,
+    "remind"    : this.Remind
+
+
+  };
+
+  this.pending_actions = {};
+
+  this.Load = function(filename)
+  {
+    this = require(filename);
+    //Restore functions
+  };
+
+  this.Save = function(filename)
+  {
+    var fs = require("fs");
+    fs.writeFile(filename, JSON.stringify(this, null, 2), "utf8");
+  };
+
+  this.ParseAction = function(message){
+
+  };
+
+}
+
+
+//Flow: Source Action -> Notify Target, Apply Queue Pending Action
+//      Target Action -> Notify Source, Apply Queue Pending Action
+
+//Prop
+//  Id
+//  Location
+//  Name()
+//  Description()
+//  Use()
+function Prop(world)
+{
+  this.id = world.NewId();
+  this.world = world;
+  this.location = null;
+  this.Name = function()
+  {
+    return "Prop";
+  }
+  this.Description = function()
+  {
+    return "An uninitialized prop\n";
+  }
+  this.Use = function()
+  {
+    return "You use the " + this.Name() + "... nothing happens\n";
+  }
+  this.world.register(this.id, this);
+}
+
+//Container : Prop
+//  Inventory[]
+//  AddItem()
+//  RemoveItem()
+//  UseItem()
+//  DropItem()
+function Container()
+{
+  this = new Prop();
+  //INVENTORY
+  this.inventory = [];
+
+  this.AddItem = function(item)
+  {
+    this.inventory.push(item);
+    return "Got " + item.Name() + "\n";
+  }
+
+  this.RemoveItem = function(item)
+  {
+    var index = this.inventory.indexOf(item);
+    if (index > -1)
+    {
+      this.inventory.splice(index, 1);
+    }
+    return "Lost " + item.Name() + "\n";
+  }
+
+  this.LookupItem = function(selector, callback)
+  {
+    var found = [];
+    for(var item in this.inventory)
+    {
+      if(item.id == selector || item.name == selector)
+      {
+        found.push(item);
+      }
+    }
+    if (found.length == 1)
+    {
+      return callback(this, found[0]);
+    }
+    else
+    {
+      var resolve = "You have more than one " + selector + "\nUse which?\n";
+      for(var  item in found)
+      {
+        resolve += item.Info();
+      }
+      resolve += "Select a Number";
+      return resolve;
+    }
+  }
+
+  this.UseItem = function(selector)
+  {
+    return this.LookupItem(selector, function(conext, item){
+      return item.Use();
+    });
+  }
+
+  this.DropItem = function(selector)
+  {
+    return this.LookupItem(selector, function(context, item){
+      context.location.AddItem(item);
+      context.RemoveItem(item);
+      return "Dropped " + item.Name() + "\n";
+    });
+  }
+
+  this.ListItems = function()
+  {
+    var response = this.Name() + "'s Inventory:\n";
+    for(var item in this.inventory)
+    {
+      response += item.Info();
+    }
+  }
+  this.world.register(this.id, this);
+}
+
+//Stats
+//  Body
+//    Strength
+//    Agility
+//  Mind
+//    Intellegence
+//    Will
+//  Soul
+//    Essence
+//    Focus
+//  Toughness
+//  Wounds
+//  Fatigue
+//  Endurance
+//  Accuracy
+//  Evasiveness
+//  Luck
+//  Resistance
+
+function Stats()
+{
+
+  this.Name = function()
+  {
+    return "Base Stats";
+  }
+
+  this.attached = {};
+  this.Attach = function(other)
+  {
+    this.attached[other.id] = other.stats;
+  }
+  this.Remove = function(other)
+  {
+    delete this.attached[other.id];
+  }
+  this.GetAttachedStat = function(stat)
+  {
+    var val = 0;
+    for(var keys in this.attached)
+    {
+      if(this.attached.hasOwnProperty(key))
+      {
+        val += this.attached[key][stat];
+      }
+    }
+    return val;
+  }
+
+  this.strength = 0;
+  this.Strength = function(mod)
+  {
+    if (!mod) mod = 0;
+    return this.strength + mod + this.GetAttachedStat("strength");
+  }
+  this.agility = 0;
+  this.Agility = function(mod)
+  {
+    if (!mod) mod = 0;
+    return this.agility + mod + this.GetAttachedStat("agility");
+  }
+  this.intelligence = 0;
+  this.Intellegence = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.intelligence + mod + this.GetAttachedStat("intelligence");
+  }
+  this.will = 0;
+  this.Will = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.will + mod + this.GetAttachedStat("will");
+  }
+  this.essence = 0;
+  this.Essence = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.essence + mod + this.GetAttachedStat("essence");
+  }
+  this.focus = 0;
+  this.Focus = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.focus + mod + this.GetAttachedStat("focus");
+  }
+
+  this.wounds = 0;
+  this.Wounds = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.wounds + mod + this.GetAttachedStat("wounds");
+  }
+  this.toughness = 1;
+  this.Toughness = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.toughness + mod + this.GetAttachedStat("toughness");
+  }
+
+  this.fatigue = 0;
+  this.Fatigue = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.fatigue + mod + this.GetAttachedStat("fatigue");
+  }
+  this.endurance = 1;
+  this.Endurance = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.endurance + mod + this.GetAttachedStat("endurance");
+  }
+
+  this.accuracy = 0.75;
+  this.Accuracy = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.accuracy + mod + this.GetAttachedStat("accuracy");
+  }
+  this.evasiveness = 0.05;
+  this.Evasiveness = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.evasiveness + mod + this.GetAttachedStat("evasiveness");
+  }
+  this.luck = 0;
+  this.Luck = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.luck + mod + this.GetAttachedStat("luck");
+  }
+  this.resistance = 0;
+  this.Resistance = function(mod)
+  {
+    if (!mod) mod = 0;
+    return str = this.resistance + mod + this.GetAttachedStat("resistance");
+  }
+}
+
+//Actor : Container
+//  Stats
+//  GetStat()
+
+function Actor()
+{
+  this = new Container();
+  this.stats = new Stats();
+  this.world.register(this.id, this);
+}
+
+//Player : Actor
+//  Userid
+//  XP
+//  Skills{Passive, Active}
+
+//Monster : Actor
+//  MonsterKind
+
+//NPC : Actor
+//  Faction
+
+//Location : Container
+//  Doors[]
+
+//Door : Prop
+//  Locked
+//  Open()
+
+//Item : Prop
+//  Stats
+//  Durability
+//  ItemKind
+//  Owner
+//  Info()
+function Item()
+{
+  this = new Prop();
+  this.stats = new Stats();
+  this.durability = -1;
+  this.owner = null;
+  this.kind = "None";
+  this.Info = function()
+  {
+    return this.id + ": " + this.Name() + " (" + this.durability + ")\n";
+  }
+  this.world.register(this.id, this);
+}
