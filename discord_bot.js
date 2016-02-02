@@ -411,7 +411,7 @@ function retry_login()
       console.log("Error logging in: " + error);
       if(retries > 0)
       {
-        setTimeout(retry, 5000);
+        setTimeout(retry_login, 5000);
       }
       else
       {
@@ -420,6 +420,7 @@ function retry_login()
     }
     else
     {
+      console.log("Successfully reconnected");
       retries = 5;
     }
   });
