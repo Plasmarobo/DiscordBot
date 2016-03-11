@@ -1,5 +1,5 @@
 var Discord = require("discord.js");
-
+var Exec    = require('child_process').exec;
 // Get the email and password
 try {
   var AuthDetails = require("./auth.json");
@@ -13,7 +13,14 @@ try {
 //stiiiiill insecure
 //AuthDetails.password = process.env.DISCORD_PASSWORD;
 
-
+function powerCycle()
+{
+  exec('shutdown -r now', function(error, stdout, stderr){
+    console.log(stdout);
+    console.error(stderr);
+    process.exit();
+  });
+}
 
 var Permissions = {};
 try{
@@ -260,6 +267,13 @@ try{
 }
 
 try{
+  superlatives = require("./superlatives.json");
+} catch(e) {
+  //No superlatives defined
+  superlatives = {};
+}
+
+try{
 	messagebox = require("./messagebox.json");
 } catch(e) {
 	//no stored messages
@@ -318,6 +332,58 @@ bot.on("message", function (msg) {
       bot.sendMessage(msg.channel, str);
     }
   }
+
+  var whois = msg.content.match(/(\<\@[a-zA-z0-9\_]+\>) (\<\@[a-zA-z0-9\_]+\>) is (.*)/i);
+  if (whois != null)
+  {
+    var user = whois[2];
+    var superlative = whois[3];
+    if(user.startsWith('<@')){
+      user = user.substr(2,user.length-3);
+    }
+    var target = msg.channel.server.members.get("id",user);
+    if(!target){
+      target = msg.channel.server.members.get("username",user);
+    }
+    if(!superlatives.hasOwnProperty(target))
+    {
+      superlatives[target] = [];
+    }
+    superlatives[target].push(superlative);
+    console.log(target + " is now " + superlative);
+    console.log(superlatives[target]);
+    require("fs").writeFile("./superlatives.json",JSON.stringify(superlatives,null,2), null);
+    bot.sendMessage(msg.channel, "Alright, " + target + " is " + superlative);
+    return;
+  }
+  var who = msg.content.match(/who is (\<\@[a-zA-z0-9\_]+\>)/i)
+  if (who != null)
+  {
+    console.log(who);
+    var user = who[1];
+    if(user.startsWith('<@')){
+      user = user.substr(2,user.length-3);
+    }
+    var target = msg.channel.server.members.get("id",user);
+    if(!target){
+      target = msg.channel.server.members.get("username",user);
+    }
+    if(!target){
+      bot.sendMessage(msg.channel,"I don't know that person...");
+      return;
+    } else {
+      var message = target + " is ";
+      for(var superlative in superlatives[target])
+      {
+        message += superlatives[target][superlative] + ", ";
+      }
+      message = message.substring(0, message.length-2) + ".";
+      bot.sendMessage(msg.channel,message);
+      return;
+    }
+    
+  }
+  
 	if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
     console.log("treating " + msg.content + " from " + msg.author + " as command");
 		var cmdTxt = msg.content.split(" ")[0].substring(1);
@@ -355,12 +421,12 @@ bot.on("message", function (msg) {
 			});
         }
 		else if(cmd) {
-		try{
-            cmd.process(bot,msg,suffix);
-	    	} catch(e){
-			bot.sendMessage(msg.channel, "command " + cmdTxt + " failed :(\n" + e.stack);
-		}
-            //if ("process" in cmd ){ 
+		  try{
+        cmd.process(bot,msg,suffix);
+	   	} catch(e){
+	   		bot.sendMessage(msg.channel, "command " + cmdTxt + " failed :(\n" + e.stack);
+		  }
+      //if ("process" in cmd ){ 
 			//	cmd.process(bot,msg,suffix);
 			//}
 		} else {
@@ -380,6 +446,7 @@ bot.on("message", function (msg) {
 });
  
 
+
 //Log user status changes
 bot.on("presence", function(user,status,gameId) {
 	//if(status === "online"){
@@ -387,39 +454,51 @@ bot.on("presence", function(user,status,gameId) {
 	console.log(user+" went "+status);
 	//}
 	try{
-	if(status != 'offline'){
-		if(messagebox.hasOwnProperty(user.id)){
-			console.log("found message for " + user.id);
-			var message = messagebox[user.id];
-			var channel = bot.channels.get("id",message.channel);
-			delete messagebox[user.id];
-			updateMessagebox();
-			bot.sendMessage(channel,message.content);
-		}
-	}
-	}catch(e){}
+  	if(status != 'offline'){
+  		if(messagebox.hasOwnProperty(user.id)){
+  			console.log("found message for " + user.id);
+  			var message = messagebox[user.id];
+  			var channel = bot.channels.get("id",message.channel);
+  			delete messagebox[user.id];
+  			updateMessagebox();
+  			bot.sendMessage(channel,message.content);
+  		}
+  	}
+	} catch(e) {
+    powerCycle();
+  }
 });
+
 var retries = 5;
+
 bot.on('disconnected', function(){
   console.log("Disconnected, attempting reconnect");
   if(retries > 0)
   {
-  setTimeout(function(){
-  
-  bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
-    if(error)
-    {
-      console.log("Could not login: " + error);
-    }
-  });
-}, 5000);
-  retries = retries - 1;
-}
-else
-{
-  console.log("Retried 5 times... exiting");
-  process.exit();
-}
+    setTimeout(function(){  
+      try {
+        bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
+          if(error)
+          {
+            console.log("Could not login: " + error);
+          }
+          else 
+          {
+            retries = 5;
+          }
+        });
+      } catch (e){
+        console.log("Error: " + e);
+        powerCycle();
+      }
+    }, 5000);
+    retries = retries - 1;
+  }
+  else
+  {
+    console.log("Retried 5 times... sending system reboot");
+    powerCycle();
+  }
 });
 
 bot.login(AuthDetails.email, AuthDetails.password);
