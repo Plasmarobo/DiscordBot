@@ -13,7 +13,10 @@ try {
 //stiiiiill insecure
 //AuthDetails.password = process.env.DISCORD_PASSWORD;
 
-
+process.on('uncaughtException', function(err){
+	console.log('Critical Error ' + err);
+	process.exit();
+});
 
 var Permissions = {};
 try{
@@ -397,7 +400,7 @@ bot.on("presence", function(user,status,gameId) {
 			bot.sendMessage(channel,message.content);
 		}
 	}
-	}catch(e){}
+	}catch(e){retry_login();}
 });
 var retries = 5;
 
@@ -415,7 +418,7 @@ function retry_login()
       }
       else
       {
-        process.exit();
+        exec("/sbin/reboot", function(error,stdout,stderr){console.log(stdout);}
       }
     }
     else
