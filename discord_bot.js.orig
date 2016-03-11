@@ -13,36 +13,42 @@ try {
 //stiiiiill insecure
 //AuthDetails.password = process.env.DISCORD_PASSWORD;
 
+<<<<<<< HEAD
 function powerCycle()
 {
-  console.log("Attempting powerCycle");
-  Exec('/sbin/reboot', function(error, stdout, stderr){
+  exec('shutdown -r now', function(error, stdout, stderr){
     console.log(stdout);
     console.error(stderr);
     process.exit();
   });
 }
+=======
+process.on('uncaughtException', function(err){
+	console.log('Critical Error ' + err);
+	process.exit();
+});
+>>>>>>> 5cf352a72420f8914648a760034c646a97d336b8
 
 var Permissions = {};
 try{
-  Permissions = require("./permissions.json");
+	Permissions = require("./permissions.json");
 } catch(e){}
 Permissions.checkPermission = function (user,permission){
-  try {
-    var allowed = false;
-    try{
-      if(Permissions.global.hasOwnProperty(permission)){
-        allowed = Permissions.global[permission] == true;
-      }
-    } catch(e){}
-    try{
-      if(Permissions.users[user.id].hasOwnProperty(permission)){
-        allowed = Permissions.users[user.id][permission] == true;
-      }
-    } catch(e){}
-    return allowed;
-  } catch(e){}
-  return false;
+	try {
+		var allowed = false;
+		try{
+			if(Permissions.global.hasOwnProperty(permission)){
+				allowed = Permissions.global[permission] == true;
+			}
+		} catch(e){}
+		try{
+			if(Permissions.users[user.id].hasOwnProperty(permission)){
+				allowed = Permissions.users[user.id][permission] == true;
+			}
+		} catch(e){}
+		return allowed;
+	} catch(e){}
+	return false;
 }
 
 var qs = require("querystring");
@@ -98,7 +104,7 @@ var commands = {
             
               bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
                   console.log("updating...");
-                var spawn = require('child_process').spawn;
+  	            var spawn = require('child_process').spawn;
                   var log = function(err,stdout,stderr){
                       if(stdout){console.log(stdout);}
                       if(stderr){console.log(stderr);}
@@ -165,91 +171,91 @@ var commands = {
             }));
         }
     },
-  "alias": {
-    usage: "<name> <actual command>",
-    description: "Creates command aliases. Useful for making simple commands on the fly",
-    process: function(bot,msg,suffix) {
-      var args = suffix.split(" ");
-      var name = args.shift();
-      if(!name){
-        bot.sendMessage(msg.channel,"!alias " + this.usage + "\n" + this.description);
-      } else if(commands[name] || name === "help"){
-        bot.sendMessage(msg.channel,"overwriting commands with aliases is not allowed!");
-      } else {
-        var command = args.shift();
-        aliases[name] = [command, args.join(" ")];
-        //now save the new alias
-        require("fs").writeFile("./alias.json",JSON.stringify(aliases,null,2), null);
-        bot.sendMessage(msg.channel,"created alias " + name);
-      }
-    }
-  },
-  "userid": {
-    usage: "[user to get id of]",
-    description: "Returns the unique id of a user. This is useful for permissions.",
-    process: function(bot,msg,suffix) {
-      if(suffix){
-        var users = msg.channel.server.members.getAll("username",suffix);
-        if(users.length == 1){
-          bot.sendMessage(msg.channel, "The id of " + users[0] + " is " + users[0].id)
-        } else if(users.length > 1){
-          var response = "multiple users found:";
-          for(var i=0;i<users.length;i++){
-            var user = users[i];
-            response += "\nThe id of " + user + " is " + user.id;
-          }
-          bot.sendMessage(msg.channel,response);
-        } else {
-          bot.sendMessage(msg.channel,"No user " + suffix + " found!");
-        }
-      } else {
-        bot.sendMessage(msg.channel, "The id of " + msg.author + " is " + msg.author.id);
-      }
-    }
-  },
-  "eval": {
-    usage: "<command>",
-    description: 'Executes arbitrary javascript in the bot process. User must have "eval" permission',
-    process: function(bot,msg,suffix) {
-      if(Permissions.checkPermission(msg.author,"eval")){
-        bot.sendMessage(msg.channel, eval(suffix,bot));
-      } else {
-        bot.sendMessage(msg.channel, msg.author + " doesn't have permission to execute eval!");
-      }
-    }
-  },
-  "roll": {
-    usage: "[max value]",
-    description: "returns a random number between 1 and max value. If no max is specified it is 10",
-    process: function(bot,msg,suffix) {
-      var max = 10;
-      if(suffix) max = suffix;
-      var val = Math.floor(Math.random() * max) + 1;
-      bot.sendMessage(msg.channel,msg.author + " rolled a " + val);
-    }
-  },
-  "msg": {
-    usage: "<user> <message to leave user>",
-    description: "leaves a message for a user the next time they come online",
-    process: function(bot,msg,suffix) {
-      var args = suffix.split(' ');
-      var user = args.shift();
-      var message = args.join(' ');
-      if(user.startsWith('<@')){
-        user = user.substr(2,user.length-3);
-      }
-      var target = msg.channel.server.members.get("id",user);
-      if(!target){
-        target = msg.channel.server.members.get("username",user);
-      }
-      messagebox[target.id] = {
-        channel: msg.channel.id,
-        content: target + ", " + msg.author + " said: " + message
-      };
-      updateMessagebox();
-      bot.sendMessage(msg.channel,"message saved.")
-    }
-  },
+	"alias": {
+		usage: "<name> <actual command>",
+		description: "Creates command aliases. Useful for making simple commands on the fly",
+		process: function(bot,msg,suffix) {
+			var args = suffix.split(" ");
+			var name = args.shift();
+			if(!name){
+				bot.sendMessage(msg.channel,"!alias " + this.usage + "\n" + this.description);
+			} else if(commands[name] || name === "help"){
+				bot.sendMessage(msg.channel,"overwriting commands with aliases is not allowed!");
+			} else {
+				var command = args.shift();
+				aliases[name] = [command, args.join(" ")];
+				//now save the new alias
+				require("fs").writeFile("./alias.json",JSON.stringify(aliases,null,2), null);
+				bot.sendMessage(msg.channel,"created alias " + name);
+			}
+		}
+	},
+	"userid": {
+		usage: "[user to get id of]",
+		description: "Returns the unique id of a user. This is useful for permissions.",
+		process: function(bot,msg,suffix) {
+			if(suffix){
+				var users = msg.channel.server.members.getAll("username",suffix);
+				if(users.length == 1){
+					bot.sendMessage(msg.channel, "The id of " + users[0] + " is " + users[0].id)
+				} else if(users.length > 1){
+					var response = "multiple users found:";
+					for(var i=0;i<users.length;i++){
+						var user = users[i];
+						response += "\nThe id of " + user + " is " + user.id;
+					}
+					bot.sendMessage(msg.channel,response);
+				} else {
+					bot.sendMessage(msg.channel,"No user " + suffix + " found!");
+				}
+			} else {
+				bot.sendMessage(msg.channel, "The id of " + msg.author + " is " + msg.author.id);
+			}
+		}
+	},
+	"eval": {
+		usage: "<command>",
+		description: 'Executes arbitrary javascript in the bot process. User must have "eval" permission',
+		process: function(bot,msg,suffix) {
+			if(Permissions.checkPermission(msg.author,"eval")){
+				bot.sendMessage(msg.channel, eval(suffix,bot));
+			} else {
+				bot.sendMessage(msg.channel, msg.author + " doesn't have permission to execute eval!");
+			}
+		}
+	},
+	"roll": {
+		usage: "[max value]",
+		description: "returns a random number between 1 and max value. If no max is specified it is 10",
+		process: function(bot,msg,suffix) {
+			var max = 10;
+			if(suffix) max = suffix;
+			var val = Math.floor(Math.random() * max) + 1;
+			bot.sendMessage(msg.channel,msg.author + " rolled a " + val);
+		}
+	},
+	"msg": {
+		usage: "<user> <message to leave user>",
+		description: "leaves a message for a user the next time they come online",
+		process: function(bot,msg,suffix) {
+			var args = suffix.split(' ');
+			var user = args.shift();
+			var message = args.join(' ');
+			if(user.startsWith('<@')){
+				user = user.substr(2,user.length-3);
+			}
+			var target = msg.channel.server.members.get("id",user);
+			if(!target){
+				target = msg.channel.server.members.get("username",user);
+			}
+			messagebox[target.id] = {
+				channel: msg.channel.id,
+				content: target + ", " + msg.author + " said: " + message
+			};
+			updateMessagebox();
+			bot.sendMessage(msg.channel,"message saved.")
+		}
+	},
   "say hello": {
     usage: "",
     description: "says hello!",
@@ -261,10 +267,10 @@ var commands = {
 
 
 try{
-  aliases = require("./alias.json");
+	aliases = require("./alias.json");
 } catch(e) {
-  //No aliases defined
-  aliases = {};
+	//No aliases defined
+	aliases = {};
 }
 
 try{
@@ -275,53 +281,53 @@ try{
 }
 
 try{
-  messagebox = require("./messagebox.json");
+	messagebox = require("./messagebox.json");
 } catch(e) {
-  //no stored messages
-  messagebox = {};
+	//no stored messages
+	messagebox = {};
 }
 function updateMessagebox(){
-  require("fs").writeFile("./messagebox.json",JSON.stringify(messagebox,null,2), null);
+	require("fs").writeFile("./messagebox.json",JSON.stringify(messagebox,null,2), null);
 }
 
 var fs = require('fs'),
-  path = require('path');
+	path = require('path');
 function getDirectories(srcpath) {
-  return fs.readdirSync(srcpath).filter(function(file) {
-    return fs.statSync(path.join(srcpath, file)).isDirectory();
-  });
+	return fs.readdirSync(srcpath).filter(function(file) {
+		return fs.statSync(path.join(srcpath, file)).isDirectory();
+	});
 }
 function load_plugins(){
-  var plugin_folders = getDirectories("./plugins");
-  for (var i = 0; i < plugin_folders.length; i++) {
-    var plugin;
-    try{
-      var plugin = require("./plugins/" + plugin_folders[i])
-    } catch (err){
-      console.log("Improper setup of the '" + plugin_folders[i] +"' plugin. : " + err);
-    }
-    if (plugin){
-      if("commands" in plugin){
-        for (var j = 0; j < plugin.commands.length; j++) {
-          if (plugin.commands[j] in plugin){
-            commands[plugin.commands[j]] = plugin[plugin.commands[j]];
-          }
-        }
-      }
-    }
-  }
-  console.log("Loaded " + Object.keys(commands).length + " chat commands type !help in Discord for a commands list.")
+	var plugin_folders = getDirectories("./plugins");
+	for (var i = 0; i < plugin_folders.length; i++) {
+		var plugin;
+		try{
+			var plugin = require("./plugins/" + plugin_folders[i])
+		} catch (err){
+			console.log("Improper setup of the '" + plugin_folders[i] +"' plugin. : " + err);
+		}
+		if (plugin){
+			if("commands" in plugin){
+				for (var j = 0; j < plugin.commands.length; j++) {
+					if (plugin.commands[j] in plugin){
+						commands[plugin.commands[j]] = plugin[plugin.commands[j]];
+					}
+				}
+			}
+		}
+	}
+	console.log("Loaded " + Object.keys(commands).length + " chat commands type !help in Discord for a commands list.")
 }
 
 var bot = new Discord.Client();
 
 bot.on("ready", function () {
-  console.log("Ready to begin! Serving in " + bot.channels.length + " channels");
-  load_plugins();
+	console.log("Ready to begin! Serving in " + bot.channels.length + " channels");
+	load_plugins();
 });
 
 bot.on("message", function (msg) {
-  //check if message is a command
+	//check if message is a command
   var flips = msg.content.match(/(\(╯°□°\）╯︵ ┻━┻)/g);
   {
     if(flips != null)
@@ -385,56 +391,56 @@ bot.on("message", function (msg) {
     
   }
   
-  if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
+	if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
     console.log("treating " + msg.content + " from " + msg.author + " as command");
-    var cmdTxt = msg.content.split(" ")[0].substring(1);
+		var cmdTxt = msg.content.split(" ")[0].substring(1);
       var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
       if(msg.content.indexOf(bot.user.mention()) == 0){
-        try {
-          cmdTxt = msg.content.split(" ")[1];
-          suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
-        } catch(e){ //no command
-          bot.sendMessage(msg.channel,"Yes?");
-          return;
-        }
+  			try {
+  				cmdTxt = msg.content.split(" ")[1];
+  				suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
+  			} catch(e){ //no command
+  				bot.sendMessage(msg.channel,"Yes?");
+  				return;
+  			}
       }
-    alias = aliases[cmdTxt];
-    if(alias){
-      cmdTxt = alias[0];
-      suffix = alias[1] + " " + suffix;
-    }
-    var cmd = commands[cmdTxt];
+		alias = aliases[cmdTxt];
+		if(alias){
+			cmdTxt = alias[0];
+			suffix = alias[1] + " " + suffix;
+		}
+		var cmd = commands[cmdTxt];
         if(cmdTxt === "help"){
             //help is special since it iterates over the other commands
-      bot.sendMessage(msg.author,"Available Commands:", function(){
-        for(var cmd in commands) {
-          var info = "!" + cmd;
-          var usage = commands[cmd].usage;
-          if(usage){
-            info += " " + usage;
-          }
-          var description = commands[cmd].description;
-          if(description){
-            info += "\n\t" + description;
-          }
-          bot.sendMessage(msg.author,info);
+			bot.sendMessage(msg.author,"Available Commands:", function(){
+				for(var cmd in commands) {
+					var info = "!" + cmd;
+					var usage = commands[cmd].usage;
+					if(usage){
+						info += " " + usage;
+					}
+					var description = commands[cmd].description;
+					if(description){
+						info += "\n\t" + description;
+					}
+					bot.sendMessage(msg.author,info);
+				}
+			});
         }
-      });
-        }
-    else if(cmd) {
-      try{
+		else if(cmd) {
+		  try{
         cmd.process(bot,msg,suffix);
-      } catch(e){
-        bot.sendMessage(msg.channel, "command " + cmdTxt + " failed :(\n" + e.stack);
-      }
+	   	} catch(e){
+	   		bot.sendMessage(msg.channel, "command " + cmdTxt + " failed :(\n" + e.stack);
+		  }
       //if ("process" in cmd ){ 
-      //  cmd.process(bot,msg,suffix);
-      //}
-    } else {
-      bot.sendMessage(msg.channel, "Invalid command " + cmdTxt);
-    }
-  } else {
-    //message isn't a command or is from us
+			//	cmd.process(bot,msg,suffix);
+			//}
+		} else {
+			bot.sendMessage(msg.channel, "Invalid command " + cmdTxt);
+		}
+	} else {
+		//message isn't a command or is from us
         //drop our own messages to prevent feedback loops
         if(msg.author == bot.user){
             return;
@@ -450,28 +456,43 @@ bot.on("message", function (msg) {
 
 //Log user status changes
 bot.on("presence", function(user,status,gameId) {
-  //if(status === "online"){
-  //console.log("presence update");
-  console.log(user+" went "+status);
-  //}
-  try{
-    if(status != 'offline'){
-      if(messagebox.hasOwnProperty(user.id)){
-        console.log("found message for " + user.id);
-        var message = messagebox[user.id];
-        var channel = bot.channels.get("id",message.channel);
-        delete messagebox[user.id];
-        updateMessagebox();
-        bot.sendMessage(channel,message.content);
-      }
-    }
-  } catch(e) {
+	//if(status === "online"){
+	//console.log("presence update");
+	console.log(user+" went "+status);
+	//}
+	try{
+<<<<<<< HEAD
+  	if(status != 'offline'){
+  		if(messagebox.hasOwnProperty(user.id)){
+  			console.log("found message for " + user.id);
+  			var message = messagebox[user.id];
+  			var channel = bot.channels.get("id",message.channel);
+  			delete messagebox[user.id];
+  			updateMessagebox();
+  			bot.sendMessage(channel,message.content);
+  		}
+  	}
+	} catch(e) {
     powerCycle();
   }
+=======
+	if(status != 'offline'){
+		if(messagebox.hasOwnProperty(user.id)){
+			console.log("found message for " + user.id);
+			var message = messagebox[user.id];
+			var channel = bot.channels.get("id",message.channel);
+			delete messagebox[user.id];
+			updateMessagebox();
+			bot.sendMessage(channel,message.content);
+		}
+	}
+	}catch(e){retry_login();}
+>>>>>>> 5cf352a72420f8914648a760034c646a97d336b8
 });
 
 var retries = 5;
 
+<<<<<<< HEAD
 bot.on('disconnected', function(){
   console.log("Disconnected, attempting reconnect");
   if(retries > 0)
@@ -500,6 +521,36 @@ bot.on('disconnected', function(){
     console.log("Retried 5 times... sending system reboot");
     powerCycle();
   }
+=======
+function retry_login()
+{
+  console.log("Attempts remaining: " + retries);
+  retries = retries - 1;
+  bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
+    if(error)
+    {
+      console.log("Error logging in: " + error);
+      if(retries > 0)
+      {
+        setTimeout(retry_login, 5000);
+      }
+      else
+      {
+        exec("/sbin/reboot", function(error,stdout,stderr){console.log(stdout);}
+      }
+    }
+    else
+    {
+      console.log("Successfully reconnected");
+      retries = 5;
+    }
+  });
+};
+
+bot.on('disconnected', function(){
+  console.log("Disconnected...");
+  retry_login();
+>>>>>>> 5cf352a72420f8914648a760034c646a97d336b8
 });
 
 bot.login(AuthDetails.email, AuthDetails.password);
