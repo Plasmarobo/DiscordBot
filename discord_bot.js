@@ -471,16 +471,23 @@ bot.on("presence", function(user,status,gameId) {
 
 var retries = 5;
 
-bot.on('disconnected', function(){
-  console.log("Disconnected, attempting reconnect");
-  if(retries > 0)
-  {
     setTimeout(function(){  
       try {
+function retry_login()
+{
+  console.log("Attempts remaining: " + retries);
+  retries = retries - 1;
         bot.login(AuthDetails.email, AuthDetails.password, function(error, token){
           if(error)
           {
             console.log("Could not login: " + error);
+      if(retries > 0)
+      {
+        setTimeout(retry_login, 5000);
+      }
+      else
+      {
+        exec("/sbin/reboot", function(error,stdout,stderr){console.log(stdout);}
           }
           else 
           {
@@ -499,6 +506,12 @@ bot.on('disconnected', function(){
     console.log("Retried 5 times... sending system reboot");
     powerCycle();
   }
+  });
+};
+
+bot.on('disconnected', function(){
+  console.log("Disconnected...");
+  retry_login();
 });
 
 bot.login(AuthDetails.email, AuthDetails.password);

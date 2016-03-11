@@ -1,0 +1,7 @@
+Install discord_bot as a service (by placing in /etc/init.d)
+
+Install checkbot.sh in /usr/bin/ or anyother location. Ensure this location is in PATH.
+Add a crontab entry with crontab -e 
+Add a line to crontab: */5 * * * * <path to>/checkbot.sh
+
+This should keep the server alive if it is installed as a service.
