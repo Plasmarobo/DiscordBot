@@ -16,7 +16,7 @@ try {
 function powerCycle()
 {
   console.log("Attempting powerCycle");
-  Exec('/sbin/reboot', function(error, stdout, stderr){
+  Exec('sudo /sbin/reboot', function(error, stdout, stderr){
     console.log(stdout);
     console.error(stderr);
     process.exit();
