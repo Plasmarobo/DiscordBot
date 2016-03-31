@@ -92,7 +92,7 @@ var commands = {
         description: "bot says message",
         process: function(bot,msg,suffix){ bot.sendMessage(msg.channel,suffix);}
     },
-    "pullanddeploy": {
+    "update": {
         description: "bot will perform a git pull master and restart with the new code",
         process: function(bot,msg,suffix) {
             
@@ -334,7 +334,7 @@ bot.on("message", function (msg) {
     }
   }
 
-  var whois = msg.content.match(/(\<\@[a-zA-z0-9\_]+\>) (\<\@[a-zA-z0-9\_]+\>) is (.*)/i);
+  var whois = msg.content.match(/(\<\@[a-zA-z0-9\_]+\>)(?:\#[0-9]+) (\<\@[a-zA-z0-9\_]+\>)(?:\#[0-9]+) is (.*)/i);
   if (whois != null)
   {
     var user = whois[2];
