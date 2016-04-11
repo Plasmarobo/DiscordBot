@@ -218,6 +218,17 @@ var commands = {
       }
     }
   },
+  "shell": {
+    usage: "<pass to  shell>",
+    description: 'Executes shell code as the bot. User must have "eval" permission',
+    process: function(bot, msg, suffix) {
+      if(Permissions.checkPermission(msg.author, "eval")){
+        bot.sendMessage(msg.channel, JSON.stringify(require('child_process').spawn(suffix)));
+      } else {
+        bot.sendMessage(msg.channel, msg.author + " doesn't' have permission to execute shell!");
+      }
+    }
+  },
   "roll": {
     usage: "[max value]",
     description: "returns a random number between 1 and max value. If no max is specified it is 10",
