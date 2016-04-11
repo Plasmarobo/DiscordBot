@@ -224,7 +224,7 @@ var commands = {
     description: 'Executes shell code as the bot. User must have "eval" permission',
     process: function(bot, msg, suffix) {
       if(Permissions.checkPermission(msg.author, "eval")){
-        bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
+        bot.sendMessage(msg.channel,"Executing Arbitrary Shell Script...",function(error,sentMsg){
           console.log("Executing Arbitrary Shell Script...");
             var spawn = require('child_process').spawn;
             var log = function(err,stdout,stderr){
@@ -233,7 +233,8 @@ var commands = {
             };
             var args = suffix.split(" ");
             var cmd = args[0];
-            var args = args.splice(0,1);
+            args.splice(0,1);
+            console.log(JSON.stringify(args));
             var result = spawn(cmd, args);
             result.stdout.on('data',function(data){
               console.log(data.toString());
