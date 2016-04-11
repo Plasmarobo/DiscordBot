@@ -1,5 +1,6 @@
 var Discord = require("discord.js");
 var Exec    = require('child_process').exec;
+var startTime = new Date().getTime();
 // Get the email and password
 try {
   var AuthDetails = require("./auth.json");
@@ -223,7 +224,29 @@ var commands = {
     description: 'Executes shell code as the bot. User must have "eval" permission',
     process: function(bot, msg, suffix) {
       if(Permissions.checkPermission(msg.author, "eval")){
-        bot.sendMessage(msg.channel, JSON.stringify(require('child_process').spawn(suffix)));
+        bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
+          console.log("Executing Arbitrary Shell Script...");
+            var spawn = require('child_process').spawn;
+            var log = function(err,stdout,stderr){
+              if(stdout){console.log(stdout);}
+              if(stderr){console.log(stderr);}
+            };
+            var args = suffix.split(" ");
+            var cmd = args[0];
+            var args = args.splice(0,1);
+            var result = spawn(cmd, args);
+            result.stdout.on('data',function(data){
+              console.log(data.toString());
+              bot.sendMessage(msg.channel, data.toString());
+            });
+            result.stderr.on('data',function(data){
+              console.log(data.toString());
+              bot.sendMessage(msg.channel, data.toString());
+            });
+            result.on("close",function(code){
+              bot.sendMessage(msg.channel,"Execution Complete!");
+            });
+        });
       } else {
         bot.sendMessage(msg.channel, msg.author + " doesn't' have permission to execute shell!");
       }
@@ -266,6 +289,13 @@ var commands = {
     description: "says hello!",
     process: function(bot,msg,suffix) {
       bot.sendMessage(msg.channel,"Hello!")
+    }
+  },
+  "uptime": {
+    usage: "",
+    descriptiion: "Prints uptime",
+    process: function(bot, msg, suffix) {
+      bot.sendMessage(msg.channel, "Up since: " startTime.getTimeString());
     }
   }
 };
