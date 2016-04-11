@@ -361,7 +361,7 @@ bot.on("message", function (msg) {
   if (who != null)
   {
     console.log(who);
-    var user = who[1];
+    var user = who[2];
     if(user.startsWith('<@')){
       user = user.substr(2,user.length-3);
     }
