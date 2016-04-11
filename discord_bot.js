@@ -1,6 +1,6 @@
 var Discord = require("discord.js");
 var Exec    = require('child_process').exec;
-var startTime = new Date().getTime();
+var startTime = new Date();
 // Get the email and password
 try {
   var AuthDetails = require("./auth.json");
@@ -295,7 +295,7 @@ var commands = {
     usage: "",
     descriptiion: "Prints uptime",
     process: function(bot, msg, suffix) {
-      bot.sendMessage(msg.channel, "Up since: " startTime.getTimeString());
+      bot.sendMessage(msg.channel, "Up since: " + startTime.getTimeString());
     }
   }
 };
