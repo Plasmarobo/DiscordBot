@@ -375,7 +375,35 @@ bot.on("message", function (msg) {
     }
   }
 
-  var whois = msg.content.match(/(\<\@[a-zA-z0-9\_]+\>)(?:\#[0-9]+) (\<\@[a-zA-z0-9\_]+\>)(?:\#[0-9]+) is (.*)/i);
+  var who = msg.content.match(/\<\@([0-9]+)\>\s\<\@([0-9]+)\>\swho\sis\s\<\@([0-9]+)\>/i)
+  if (who != null)
+  {
+    console.log(who);
+    var user = who[2];
+    if(user.startsWith('<@')){
+      user = user.substr(2,user.length-3);
+    }
+    var target = msg.channel.server.members.get("id",user);
+    if(!target){
+      target = msg.channel.server.members.get("username",user);
+    }
+    if(!target){
+      bot.sendMessage(msg.channel,"I don't know " + user);
+      return;
+    } else {
+      var message = target + " is ";
+      for(var superlative in superlatives[target])
+      {
+        message += superlatives[target][superlative] + ", ";
+      }
+      message = message.substring(0, message.length-2) + ".";
+      bot.sendMessage(msg.channel,message);
+      return;
+    }
+    
+  }
+
+  var whois = msg.content.match(/\<\@([0-9]+)\>\s\<\@([0-9]+)\>\sis\s(.*)/i);
   if (whois != null)
   {
     var user = whois[2];
@@ -398,33 +426,7 @@ bot.on("message", function (msg) {
     bot.sendMessage(msg.channel, "Alright, " + target + " is " + superlative);
     return;
   }
-  var who = msg.content.match(/(\<\@[a-zA-z0-9\_]+\>)(?:\#[0-9]+) who is (.*)/i)
-  if (who != null)
-  {
-    console.log(who);
-    var user = who[2];
-    if(user.startsWith('<@')){
-      user = user.substr(2,user.length-3);
-    }
-    var target = msg.channel.server.members.get("id",user);
-    if(!target){
-      target = msg.channel.server.members.get("username",user);
-    }
-    if(!target){
-      bot.sendMessage(msg.channel,"I don't know that person...");
-      return;
-    } else {
-      var message = target + " is ";
-      for(var superlative in superlatives[target])
-      {
-        message += superlatives[target][superlative] + ", ";
-      }
-      message = message.substring(0, message.length-2) + ".";
-      bot.sendMessage(msg.channel,message);
-      return;
-    }
-    
-  }
+  
   
   if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
     console.log("treating " + msg.content + " from " + msg.author + " as command");
