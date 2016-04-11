@@ -357,7 +357,7 @@ bot.on("message", function (msg) {
     bot.sendMessage(msg.channel, "Alright, " + target + " is " + superlative);
     return;
   }
-  var who = msg.content.match(/who is (\<\@[a-zA-z0-9\_]+\>)/i)
+  var who = msg.content.match(/(\<\@[a-zA-z0-9\_]+\>)(?:\#[0-9]+) who is (.*)/i)
   if (who != null)
   {
     console.log(who);
