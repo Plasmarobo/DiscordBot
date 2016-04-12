@@ -296,7 +296,7 @@ var commands = {
     usage: "",
     descriptiion: "Prints uptime",
     process: function(bot, msg, suffix) {
-      bot.sendMessage(msg.channel, "Up since: " + startTime.getTimeString());
+      bot.sendMessage(msg.channel, "Up since: " + startTime.toDateString());
     }
   }
 };
@@ -376,7 +376,7 @@ bot.on("message", function (msg) {
     }
   }
 
-  var who = msg.content.match(/\<\@([0-9]+)\>\swho\sis\s\<\@([0-9]+)\>/i)
+  var who = msg.content.match(/\<\@([0-9]+)\>\swho\sis\s\<\@([0-9]+)\>/g)
   if (who != null)
   {
     console.log(who);
@@ -404,7 +404,7 @@ bot.on("message", function (msg) {
     
   }
 
-  var whois = msg.content.match(/\<\@([0-9]+)\>\s\<\@([0-9]+)\>\sis\s(.*)/i);
+  var whois = msg.content.match(/\<\@([0-9]+)\>\s\<\@([0-9]+)\>\sis\s(.*)/g);
   if (whois != null)
   {
     var user = whois[2];
