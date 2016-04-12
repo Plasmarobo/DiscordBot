@@ -303,7 +303,7 @@ var commands = {
     usage: "",
     description: "Dumps what plasmabot hears",
     process: function(bot, msg, suffix) {
-      bot.sendMessage(msg.channel, JSON.stringify(msg.content));
+      bot.sendMessage(msg.channel, JSON.stringify(msg.content.replace("@","")));
     }
   }
 };
