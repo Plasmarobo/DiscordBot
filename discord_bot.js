@@ -383,14 +383,11 @@ bot.on("message", function (msg) {
     }
   }
 
-  var who = msg.content.match(/\<\@([0-9]+)\>\swho\sis\s\<\@([0-9]+)\>/g)
+  var who = msg.content.match(/\<\@([0-9]+)\>\swho\sis\s\<\@([0-9]+)\>/i)
   if (who != null)
   {
     console.log(who);
     var user = who[2];
-    if(user.startsWith('<@')){
-      user = user.substr(2,user.length-3);
-    }
     var target = msg.channel.server.members.get("id",user);
     if(!target){
       target = msg.channel.server.members.get("username",user);
@@ -411,14 +408,12 @@ bot.on("message", function (msg) {
     
   }
 
-  var whois = msg.content.match(/\<\@([0-9]+)\>\s\<\@([0-9]+)\>\sis\s(.*)/g);
+  var whois = msg.content.match(/\<\@([0-9]+)\>\s\<\@([0-9]+)\>\sis\s(.*)/i);
   if (whois != null)
   {
+    console.log(whois);
     var user = whois[2];
     var superlative = whois[3];
-    if(user.startsWith('<@')){
-      user = user.substr(2,user.length-3);
-    }
     var target = msg.channel.server.members.get("id",user);
     if(!target){
       target = msg.channel.server.members.get("username",user);
