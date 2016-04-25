@@ -305,7 +305,38 @@ var commands = {
     process: function(bot, msg, suffix) {
       bot.sendMessage(msg.channel, JSON.stringify(msg.content.replace("@","")));
     }
-  }
+  },
+  "amend": {
+    usage: "<@user> <superlative# starting from 0> <amended text>",
+    description: "Use to alter or correct a superlative",
+    process: function(bot, msg, suffix) {
+      var who = msg.content.match(/\<\@([0-9]+)\>\s<\@([0-9]+)\>\s([0-9]+)\s(.*)/i)
+      if (who != null)
+      {
+        console.log(who);
+        var user = who[2];
+        var superlative_id = who[3];
+        var new_text = who[4];
+        var target = msg.channel.server.members.get("id",user);
+        if(!target){
+          target = msg.channel.server.members.get("username",user);
+        }
+        if(!target){
+          bot.sendMessage(msg.channel,"I don't know " + user);
+          return;
+        } else {
+          if ((superlatives[target] != undefined) && (superlatives[target].length > superlative_id))
+          {
+            superlatives[target][superlative_id] = new_text;
+            bot.sendMessage(msg.channel, "Superlative updated!");
+          } else {
+            bot.sendMessage(msg.channel,"Target doesn't have " + (superlative_id + 1) + " superlatives.");
+          }
+          return;
+        }
+      }
+    }
+  },
 };
 
 
