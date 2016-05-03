@@ -314,9 +314,9 @@ var commands = {
       if (who != null)
       {
         console.log(who);
-        var user = who[2];
-        var superlative_id = who[3];
-        var new_text = who[4];
+        var user = who[1];
+        var superlative_id = who[2];
+        var new_text = who[3];
         var target = msg.channel.server.members.get("id",user);
         if(!target){
           target = msg.channel.server.members.get("username",user);
