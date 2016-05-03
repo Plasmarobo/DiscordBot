@@ -310,7 +310,7 @@ var commands = {
     usage: "<@user> <superlative# starting from 0> <amended text>",
     description: "Use to alter or correct a superlative",
     process: function(bot, msg, suffix) {
-      var who = msg.content.match(/\<\@([0-9]+)\>\s<\@([0-9]+)\>\s([0-9]+)\s(.*)/i)
+      var who = msg.content.match(/\s<\@([0-9]+)\>\s([0-9]+)\s(.*)/i)
       if (who != null)
       {
         console.log(who);
@@ -334,6 +334,8 @@ var commands = {
           }
           return;
         }
+      } else {
+        bot.sendMessage(msg.channel,"Couldn't understand what you wanted to amend.");
       }
     }
   },
