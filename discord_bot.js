@@ -46,6 +46,17 @@ Permissions.checkPermission = function (user,permission){
   return false;
 }
 
+var triviaScores;
+var triviaCurrentQuestion = null;
+var trivialURL = 'http://jservice.io/api';
+var TextSimilarity = require('textsimilarity');
+var triviaAnswerMarkers = {};
+var triviaSimilarityThreshold = 0.90;
+
+try {
+  triviaScores = require("./trivia_scores.json");
+} catch(e) {}
+
 var qs = require("querystring");
 
 var config = {
@@ -59,113 +70,113 @@ var aliases;
 var messagebox;
 
 var commands = {
-    "ping": {
-        description: "responds pong, useful for checking if bot is alive",
-        process: function(bot, msg, suffix) {
-            bot.sendMessage(msg.channel, msg.sender+" pong!");
-            if(suffix){
-                bot.sendMessage(msg.channel, "note that !ping takes no arguments!");
-            }
-        }
-    },
-    "servers": {
-        description: "lists servers bot is connected to",
-        process: function(bot,msg){bot.sendMessage(msg.channel,bot.servers);}
-    },
-    "channels": {
-        description: "lists channels bot is connected to",
-        process: function(bot,msg) { bot.sendMessage(msg.channel,bot.channels);}
-    },
-    "myid": {
-        description: "returns the user id of the sender",
-        process: function(bot,msg){bot.sendMessage(msg.channel,msg.author.id);}
-    },
-    "idle": {
-        description: "sets bot status to idle",
-        process: function(bot,msg){ bot.setStatusIdle();}
-    },
-    "online": {
-        description: "sets bot status to online",
-        process: function(bot,msg){ bot.setStatusOnline();}
-    },
-    "say": {
-        usage: "<message>",
-        description: "bot says message",
-        process: function(bot,msg,suffix){ bot.sendMessage(msg.channel,suffix);}
-    },
-    "update": {
-        description: "bot will perform a git pull master and restart with the new code",
-        process: function(bot,msg,suffix) {
-            
-              bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
-                  console.log("updating...");
-                var spawn = require('child_process').spawn;
-                  var log = function(err,stdout,stderr){
-                      if(stdout){console.log(stdout);}
-                      if(stderr){console.log(stderr);}
-                  };
-                  var fetch = spawn('git', ['fetch']);
-                  fetch.stdout.on('data',function(data){
-                      console.log(data.toString());
-                  });
-                  fetch.on("close",function(code){
-                      var reset = spawn('git', ['reset','--hard','origin/master']);
-                      reset.stdout.on('data',function(data){
-                          console.log(data.toString());
-                      });
-                      reset.on("close",function(code){
-                          var npm = spawn('npm', ['install']);
-                          npm.stdout.on('data',function(data){
-                              console.log(data.toString());
-                          });
-                          npm.on("close",function(code){
-                              console.log("goodbye");
-                              bot.sendMessage(msg.channel,"brb!",function(){
-                                  bot.logout(function(){
-                                      process.exit();
-                                  });
-                              });
-                          });
-                      });
-                  });
-              });
-            
-        }
-    },
-    "version": {
-        description: "returns the git commit this bot is running",
-        process: function(bot,msg,suffix) {
-            var commit = require('child_process').spawn('git', ['log','-n','1']);
-            commit.stdout.on('data', function(data) {
-                bot.sendMessage(msg.channel,data);
+  "ping": {
+      description: "responds pong, useful for checking if bot is alive",
+      process: function(bot, msg, suffix) {
+          bot.sendMessage(msg.channel, msg.sender+" pong!");
+          if(suffix){
+              bot.sendMessage(msg.channel, "note that !ping takes no arguments!");
+          }
+      }
+  },
+  "servers": {
+      description: "lists servers bot is connected to",
+      process: function(bot,msg){bot.sendMessage(msg.channel,bot.servers);}
+  },
+  "channels": {
+      description: "lists channels bot is connected to",
+      process: function(bot,msg) { bot.sendMessage(msg.channel,bot.channels);}
+  },
+  "myid": {
+      description: "returns the user id of the sender",
+      process: function(bot,msg){bot.sendMessage(msg.channel,msg.author.id);}
+  },
+  "idle": {
+      description: "sets bot status to idle",
+      process: function(bot,msg){ bot.setStatusIdle();}
+  },
+  "online": {
+      description: "sets bot status to online",
+      process: function(bot,msg){ bot.setStatusOnline();}
+  },
+  "say": {
+      usage: "<message>",
+      description: "bot says message",
+      process: function(bot,msg,suffix){ bot.sendMessage(msg.channel,suffix);}
+  },
+  "update": {
+      description: "bot will perform a git pull master and restart with the new code",
+      process: function(bot,msg,suffix) {
+          
+            bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
+                console.log("updating...");
+              var spawn = require('child_process').spawn;
+                var log = function(err,stdout,stderr){
+                    if(stdout){console.log(stdout);}
+                    if(stderr){console.log(stderr);}
+                };
+                var fetch = spawn('git', ['fetch']);
+                fetch.stdout.on('data',function(data){
+                    console.log(data.toString());
+                });
+                fetch.on("close",function(code){
+                    var reset = spawn('git', ['reset','--hard','origin/master']);
+                    reset.stdout.on('data',function(data){
+                        console.log(data.toString());
+                    });
+                    reset.on("close",function(code){
+                        var npm = spawn('npm', ['install']);
+                        npm.stdout.on('data',function(data){
+                            console.log(data.toString());
+                        });
+                        npm.on("close",function(code){
+                            console.log("goodbye");
+                            bot.sendMessage(msg.channel,"brb!",function(){
+                                bot.logout(function(){
+                                    process.exit();
+                                });
+                            });
+                        });
+                    });
+                });
             });
-            commit.on('close',function(code) {
-                if( code != 0){
-                    bot.sendMessage(msg.channel,"failed checking git version!");
-                }
-            });
-        }
-    },
-    "log": {
-        usage: "<log message>",
-        description: "logs message to bot console",
-        process: function(bot,msg,suffix){console.log(msg.content);}
-    },
-    "join-server": {
-        usage: "<invite>",
-        description: "joins the server it's invited to",
-        process: function(bot,msg,suffix) {
-            console.log(bot.joinServer(suffix,function(error,server) {
-                console.log("callback: " + arguments);
-                if(error){
-                    bot.sendMessage(msg.channel,"failed to join: " + error);
-                } else {
-                    console.log("Joined server " + server);
-                    bot.sendMessage(msg.channel,"Successfully joined " + server);
-                }
-            }));
-        }
-    },
+          
+      }
+  },
+  "version": {
+      description: "returns the git commit this bot is running",
+      process: function(bot,msg,suffix) {
+          var commit = require('child_process').spawn('git', ['log','-n','1']);
+          commit.stdout.on('data', function(data) {
+              bot.sendMessage(msg.channel,data);
+          });
+          commit.on('close',function(code) {
+              if( code != 0){
+                  bot.sendMessage(msg.channel,"failed checking git version!");
+              }
+          });
+      }
+  },
+  "log": {
+      usage: "<log message>",
+      description: "logs message to bot console",
+      process: function(bot,msg,suffix){console.log(msg.content);}
+  },
+  "join-server": {
+      usage: "<invite>",
+      description: "joins the server it's invited to",
+      process: function(bot,msg,suffix) {
+          console.log(bot.joinServer(suffix,function(error,server) {
+              console.log("callback: " + arguments);
+              if(error){
+                  bot.sendMessage(msg.channel,"failed to join: " + error);
+              } else {
+                  console.log("Joined server " + server);
+                  bot.sendMessage(msg.channel,"Successfully joined " + server);
+              }
+          }));
+      }
+  },
   "alias": {
     usage: "<name> <actual command>",
     description: "Creates command aliases. Useful for making simple commands on the fly",
@@ -337,10 +348,74 @@ var commands = {
       } else {
         bot.sendMessage(msg.channel,"Couldn't understand what you wanted to amend.");
       }
+    },
+    "trebek" : {
+      description: "Get's a new Jeopardy question",
+      process: function(bot, msg, suffix) {
+        // Get clue
+        if (triviaCurrentQuestion != null) {
+          bot.sendMessage(msg.channel, "Well, the answer was : " + triviaCurrentQuestion["answer"]);
+        }
+        triviaAnswerMarker = {};
+        http.get(trivialUrl + '/random?count=1', function(res){
+          var body = '';
+        
+          res.on('data', function(chunk){
+            body += chunk;
+          });
+        
+          res.on('end', function(){
+            currentTriviaQuestion = JSON.parse(body)[0];
+            if (currentTriviaQuestion["invalid_count"] != null) {
+              bot.sendMessage(msg.channel, "Looks like this next one might be a bit off...");
+            }
+            bot.sendMessage(msg.channel, currentTriviaQuestion["category"]["title"] + " for $" + currentTriviaQuestion["value"] + ":" + currentTriviaQuestion["question"] + ".");
+          });
+        }).on('error', function(e){
+          console.log("Error Requesting Clue: ", e);
+          bot.sendMessage(msg.channel, "Er, looks like I couldn't find a clue for you...");
+        });
+      }
+    },
+    "what" : {
+      usage: "what <is/are> <answer to question>",
+      description: "Answers a Jeopardy question",
+      process: function(bot, msg, suffix) {
+        if (triviaAnswerMarkers.hasOwnProperty(msg.author)) {
+          bot.sendMessage(msg.channel, "You've already tried and failed, give up.");
+          return;
+        }
+        var correct = currentTriviaQuestion["answer"];
+        correct = correct.replace(/[^\w\s]/i, "");
+        correct = correct.replace(/^(the|a|an) /i, "");
+        correct = correct.trim();
+        correct = correct.toLowerCase();
+        var answer = suffix.match(/\s[is|are]\s(.*)/i);
+        answer = answer.replace(/\s+(&nbsp;|&)\s+/i, " and ");
+        answer = answer.replace(/[^\w\s]/i, "");
+        answer = answer.replace(/^(what|whats|where|wheres|who|whos) /i, "");
+        answer = answer.replace(/^(is|are|was|were) /, "");
+        answer = answer.replace(/^(the|a|an) /i, "");
+        answer = answer.replace(/\?+$/, "");
+        answer = answer.trim();
+        answer = answer.toLowerCase();
+        if (TextSimilarity(answer, correct) > trivialSimilarityThreshold) {
+          if (!triviaScores.hasOwnProperty(msg.author)) {
+            triviaScores[msg.author] = 0;
+          }
+          triviaScores[msg.author] += currentTriviaQuestion["value"];
+          bot.sendMessage(msg.channel, "That is correct " + msg.author + " your score is now:" + triviaScores[msg.author]);
+          currentTriviaQuestion = null;
+          triviaAnswerMarker = {};
+        } else {
+          triviaScores -= currentTriviaQuestion["value"];
+          bot.sendMessage(msg.channel, "Nope! Sorry. Your score is now:" + triviaScores[msg.author]);
+          triviaAnswerMarker[msg.author] = true;
+        }
+      }
     }
   },
 };
-
 
 try{
   aliases = require("./alias.json");
@@ -462,7 +537,6 @@ bot.on("message", function (msg) {
     bot.sendMessage(msg.channel, "Alright, " + target + " is " + superlative);
     return;
   }
-  
   
   if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
     console.log("treating " + msg.content + " from " + msg.author + " as command");
