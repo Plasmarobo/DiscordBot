@@ -1,5 +1,6 @@
 var Discord = require("discord.js");
 var Exec    = require('child_process').exec;
+var Http    = require('http');
 var startTime = new Date();
 // Get the email and password
 try {
@@ -46,15 +47,15 @@ Permissions.checkPermission = function (user,permission){
   return false;
 }
 
-var triviaScores;
-var triviaCurrentQuestion = null;
-var trivialURL = 'http://jservice.io/api';
+var triviaScores = {};
+var currentTriviaQuestion = null;
+var triviaURL = 'http://jservice.io/api';
 var TextSimilarity = require('textsimilarity');
 var triviaAnswerMarkers = {};
 var triviaSimilarityThreshold = 0.90;
 
 try {
-  triviaScores = require("./trivia_scores.json");
+  triviaScores = require("./triviaScores.json");
 } catch(e) {}
 
 var qs = require("querystring");
@@ -348,71 +349,94 @@ var commands = {
       } else {
         bot.sendMessage(msg.channel,"Couldn't understand what you wanted to amend.");
       }
-    },
-    "trebek" : {
-      description: "Get's a new Jeopardy question",
-      process: function(bot, msg, suffix) {
-        // Get clue
-        if (triviaCurrentQuestion != null) {
-          bot.sendMessage(msg.channel, "Well, the answer was : " + triviaCurrentQuestion["answer"]);
-        }
-        triviaAnswerMarker = {};
-        http.get(trivialUrl + '/random?count=1', function(res){
-          var body = '';
-        
-          res.on('data', function(chunk){
-            body += chunk;
-          });
-        
-          res.on('end', function(){
-            currentTriviaQuestion = JSON.parse(body)[0];
-            if (currentTriviaQuestion["invalid_count"] != null) {
-              bot.sendMessage(msg.channel, "Looks like this next one might be a bit off...");
-            }
-            bot.sendMessage(msg.channel, currentTriviaQuestion["category"]["title"] + " for $" + currentTriviaQuestion["value"] + ":" + currentTriviaQuestion["question"] + ".");
-          });
-        }).on('error', function(e){
-          console.log("Error Requesting Clue: ", e);
-          bot.sendMessage(msg.channel, "Er, looks like I couldn't find a clue for you...");
+    }
+  },
+  "trebek" : {
+    description: "Gets a new Jeopardy question",
+    process: function(bot, msg, suffix) {
+      // Get clue
+      if (currentTriviaQuestion != null) {
+        bot.sendMessage(msg.channel, "Well, the answer was: " + currentTriviaQuestion["answer"]);
+      }
+      triviaAnswerMarkers = {};
+      Http.get(triviaURL + '/random?count=1', function(res){
+        var body = '';
+      
+        res.on('data', function(chunk){
+          body += chunk;
         });
-      }
-    },
-    "what" : {
-      usage: "what <is/are> <answer to question>",
-      description: "Answers a Jeopardy question",
-      process: function(bot, msg, suffix) {
-        if (triviaAnswerMarkers.hasOwnProperty(msg.author)) {
-          bot.sendMessage(msg.channel, "You've already tried and failed, give up.");
-          return;
-        }
-        var correct = currentTriviaQuestion["answer"];
-        correct = correct.replace(/[^\w\s]/i, "");
-        correct = correct.replace(/^(the|a|an) /i, "");
-        correct = correct.trim();
-        correct = correct.toLowerCase();
-        var answer = suffix.match(/\s[is|are]\s(.*)/i);
-        answer = answer.replace(/\s+(&nbsp;|&)\s+/i, " and ");
-        answer = answer.replace(/[^\w\s]/i, "");
-        answer = answer.replace(/^(what|whats|where|wheres|who|whos) /i, "");
-        answer = answer.replace(/^(is|are|was|were) /, "");
-        answer = answer.replace(/^(the|a|an) /i, "");
-        answer = answer.replace(/\?+$/, "");
-        answer = answer.trim();
-        answer = answer.toLowerCase();
-        if (TextSimilarity(answer, correct) > trivialSimilarityThreshold) {
-          if (!triviaScores.hasOwnProperty(msg.author)) {
-            triviaScores[msg.author] = 0;
+      
+        res.on('end', function(){
+          currentTriviaQuestion = JSON.parse(body)[0];
+          if (currentTriviaQuestion["invalid_count"] != null) {
+            bot.sendMessage(msg.channel, "Looks like this next one might be a bit off...");
           }
-          triviaScores[msg.author] += currentTriviaQuestion["value"];
-          bot.sendMessage(msg.channel, "That is correct " + msg.author + " your score is now:" + triviaScores[msg.author]);
-          currentTriviaQuestion = null;
-          triviaAnswerMarker = {};
-        } else {
-          triviaScores -= currentTriviaQuestion["value"];
-          bot.sendMessage(msg.channel, "Nope! Sorry. Your score is now:" + triviaScores[msg.author]);
-          triviaAnswerMarker[msg.author] = true;
-        }
+          bot.sendMessage(msg.channel, currentTriviaQuestion["category"]["title"] + " for $" + currentTriviaQuestion["value"] + ": " + currentTriviaQuestion["question"] + ".");
+        });
+      }).on('error', function(e){
+        console.log("Error Requesting Clue: ", e);
+        bot.sendMessage(msg.channel, "Er, looks like I couldn't find a clue for you...");
+      });
+    }
+  },
+  "who" : {
+    usage: "who <is/are> answer to question>",
+    description: "Answers a Jeopardy question",
+    process: function(bot, msg, suffix) {
+      commands["what"].process(bot, msg, suffix);
+    }
+  },
+  "what" : {
+    usage: "what <is/are> <answer to question>",
+    description: "Answers a Jeopardy question",
+    process: function(bot, msg, suffix) {
+      if (triviaAnswerMarkers[msg.author] == true) {
+        bot.sendMessage(msg.channel, "You've already tried and failed, give up.");
+        return;
       }
+      if (currentTriviaQuestion == null) {
+        bot.sendMessage(msg.channel, "Huh, there doesn't seem to be a question.");
+        return;
+      }
+      var correct = currentTriviaQuestion["answer"];
+      correct = correct.replace(/[^\w\s]/i, "");
+      correct = correct.replace(/^(the|a|an) /i, "");
+      correct = correct.replace(/\<(.*)\>/g, "");
+      correct = correct.trim();
+      correct = correct.toLowerCase();
+      var answer = suffix;
+      answer = answer.replace(/\s+(&nbsp;|&)\s+/i, " and ");
+      answer = answer.replace(/[^\w\s]/i, "");
+      answer = answer.replace(/^(what|whats|where|wheres|who|whos) /i, "");
+      answer = answer.replace(/^(is|are|was|were) /, "");
+      answer = answer.replace(/^(the|a|an) /i, "");
+      answer = answer.replace(/\?+$/, "");
+      answer = answer.trim();
+      answer = answer.toLowerCase();
+      if (triviaScores[msg.author] == undefined) {
+          triviaScores[msg.author] = 0;
+      }
+      if (TextSimilarity(answer, correct) > triviaSimilarityThreshold) {  
+        triviaScores[msg.author] += parseInt(currentTriviaQuestion["value"], 10);
+        bot.sendMessage(msg.channel, "That is correct " + msg.author + ", your score is now: $" + triviaScores[msg.author]);
+        currentTriviaQuestion = null;
+        triviaAnswerMarkers = {};
+      } else {
+        triviaScores[msg.author] -= parseInt(currentTriviaQuestion["value"], 10);
+        bot.sendMessage(msg.channel, "Nope! Sorry. Your score is now: $" + triviaScores[msg.author]);
+        triviaAnswerMarkers[msg.author] = true;
+      }
+      require("fs").writeFile("./triviaScores.json", JSON.stringify(triviaScores,null,2), null);
+    }
+  },
+  "scores" : {
+    description: "prints trivia scores",
+    process: function(bot, msg, suffix) {
+      var scores = "";
+      for(var player in triviaScores) {
+        scores += player + ": $" + triviaScores[player] + "\n";
+      }
+      bot.sendMessage(msg.channel, scores);
     }
   },
 };
