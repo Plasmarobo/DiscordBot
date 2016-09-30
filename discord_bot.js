@@ -25,6 +25,15 @@ function powerCycle()
   });
 }
 
+function sanitizeAnswer(correct) {
+      correct = correct.replace(/[^\w\s]/i, "");
+      correct = correct.replace(/^(the|a|an) /i, "");
+      correct = correct.replace(/<(?:.|\n)*?>/gm, '');
+      correct = correct.trim();
+      correct = correct.toLowerCase();
+  return correct;
+}
+
 var Permissions = {};
 try{
   Permissions = require("./permissions.json");
@@ -52,7 +61,7 @@ var currentTriviaQuestion = null;
 var triviaURL = 'http://jservice.io/api';
 var TextSimilarity = require('textsimilarity');
 var triviaAnswerMarkers = {};
-var triviaSimilarityThreshold = 0.90;
+var triviaSimilarityThreshold = 0.75;
 
 try {
   triviaScores = require("./triviaScores.json");
@@ -306,7 +315,7 @@ var commands = {
   },
   "uptime": {
     usage: "",
-    descriptiion: "Prints uptime",
+    description: "Prints uptime",
     process: function(bot, msg, suffix) {
       bot.sendMessage(msg.channel, "Up since: " + startTime.toString());
     }
@@ -357,8 +366,11 @@ var commands = {
       // Get clue
       if (currentTriviaQuestion != null) {
         bot.sendMessage(msg.channel, "Well, the answer was: " + currentTriviaQuestion["answer"]);
+        bot.sendMessage(msg.channel, "Debug: <" + sanitizeAnswer(currentTriviaQuestion["answer"] + ">");
       }
       triviaAnswerMarkers = {};
+      currentTriviaQuestion["value"] = null;
+   
       Http.get(triviaURL + '/random?count=1', function(res){
         var body = '';
       
@@ -371,12 +383,20 @@ var commands = {
           if (currentTriviaQuestion["invalid_count"] != null) {
             bot.sendMessage(msg.channel, "Looks like this next one might be a bit off...");
           }
+          if(!isNaN(parseFloat(currentTriviaQuestion["value"])) && isFinite(currentTriviaQuestion["value"]) {
+             bot.sendMessage(msg.channel, "Looks like this question isn't worth any points!");
+             commands["trebek"].process(bot, msg, suffix);
+             return;
+          }
+          //Strip bad stuff from answer
+          
           bot.sendMessage(msg.channel, currentTriviaQuestion["category"]["title"] + " for $" + currentTriviaQuestion["value"] + ": " + currentTriviaQuestion["question"] + ".");
         });
       }).on('error', function(e){
         console.log("Error Requesting Clue: ", e);
         bot.sendMessage(msg.channel, "Er, looks like I couldn't find a clue for you...");
       });
+  
     }
   },
   "who" : {
@@ -398,12 +418,7 @@ var commands = {
         bot.sendMessage(msg.channel, "Huh, there doesn't seem to be a question.");
         return;
       }
-      var correct = currentTriviaQuestion["answer"];
-      correct = correct.replace(/[^\w\s]/i, "");
-      correct = correct.replace(/^(the|a|an) /i, "");
-      correct = correct.replace(/\<(.*)\>/g, "");
-      correct = correct.trim();
-      correct = correct.toLowerCase();
+      var correct = sanitizeAnswer(currentTrivialQuestion["answer"]);
       var answer = suffix;
       answer = answer.replace(/\s+(&nbsp;|&)\s+/i, " and ");
       answer = answer.replace(/[^\w\s]/i, "");
