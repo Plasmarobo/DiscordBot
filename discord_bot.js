@@ -366,7 +366,7 @@ var commands = {
       // Get clue
       if (currentTriviaQuestion != null) {
         bot.sendMessage(msg.channel, "Well, the answer was: " + currentTriviaQuestion["answer"]);
-        bot.sendMessage(msg.channel, "Debug: <" + sanitizeAnswer(currentTriviaQuestion["answer"] + ">");
+        bot.sendMessage(msg.channel, "Debug: <" + sanitizeAnswer(currentTriviaQuestion["answer"] + ">"));
       }
       triviaAnswerMarkers = {};
       currentTriviaQuestion["value"] = null;
@@ -383,7 +383,7 @@ var commands = {
           if (currentTriviaQuestion["invalid_count"] != null) {
             bot.sendMessage(msg.channel, "Looks like this next one might be a bit off...");
           }
-          if(!isNaN(parseFloat(currentTriviaQuestion["value"])) && isFinite(currentTriviaQuestion["value"]) {
+          if(!isNaN(parseFloat(currentTriviaQuestion["value"])) && isFinite(currentTriviaQuestion["value"])) {
              bot.sendMessage(msg.channel, "Looks like this question isn't worth any points!");
              commands["trebek"].process(bot, msg, suffix);
              return;
