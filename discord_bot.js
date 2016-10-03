@@ -28,10 +28,15 @@ function powerCycle()
 function sanitizeAnswer(correct) {
       correct = correct.replace(/[^\w\s]/i, "");
       correct = correct.replace(/^(the|a|an) /i, "");
-      correct = correct.replace(/<(?:.|\n)*?>/gm, '');
+      correct = correct.replace(/<(.|\n)*?>/g, '');
+      correct = correct.replace(/\&/g, 'and');
       correct = correct.trim();
       correct = correct.toLowerCase();
   return correct;
+}
+
+function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
 var Permissions = {};
@@ -366,10 +371,8 @@ var commands = {
       // Get clue
       if (currentTriviaQuestion != null) {
         bot.sendMessage(msg.channel, "Well, the answer was: " + currentTriviaQuestion["answer"]);
-        bot.sendMessage(msg.channel, "Debug: <" + sanitizeAnswer(currentTriviaQuestion["answer"] + ">"));
       }
       triviaAnswerMarkers = {};
-      currentTriviaQuestion["value"] = null;
    
       Http.get(triviaURL + '/random?count=1', function(res){
         var body = '';
@@ -380,11 +383,13 @@ var commands = {
       
         res.on('end', function(){
           currentTriviaQuestion = JSON.parse(body)[0];
+          console.log("Got: " + JSON.stringify(currentTriviaQuestion));
           if (currentTriviaQuestion["invalid_count"] != null) {
             bot.sendMessage(msg.channel, "Looks like this next one might be a bit off...");
           }
-          if(!isNaN(parseFloat(currentTriviaQuestion["value"])) && isFinite(currentTriviaQuestion["value"])) {
-             bot.sendMessage(msg.channel, "Looks like this question isn't worth any points!");
+          console.log("value: " + currentTriviaQuestion["value"]);
+          if(!isNumeric(currentTriviaQuestion["value"])) {
+             currentTriviaQuestion = null;        
              commands["trebek"].process(bot, msg, suffix);
              return;
           }
@@ -418,7 +423,7 @@ var commands = {
         bot.sendMessage(msg.channel, "Huh, there doesn't seem to be a question.");
         return;
       }
-      var correct = sanitizeAnswer(currentTrivialQuestion["answer"]);
+      var correct = sanitizeAnswer(currentTriviaQuestion["answer"]);
       var answer = suffix;
       answer = answer.replace(/\s+(&nbsp;|&)\s+/i, " and ");
       answer = answer.replace(/[^\w\s]/i, "");
@@ -431,7 +436,9 @@ var commands = {
       if (triviaScores[msg.author] == undefined) {
           triviaScores[msg.author] = 0;
       }
-      if (TextSimilarity(answer, correct) > triviaSimilarityThreshold) {  
+      var similarity = TextSimilarity(answer, correct);
+      console.log("Got answer with a similarity of " + similarity);
+      if (similarity > triviaSimilarityThreshold) {  
         triviaScores[msg.author] += parseInt(currentTriviaQuestion["value"], 10);
         bot.sendMessage(msg.channel, "That is correct " + msg.author + ", your score is now: $" + triviaScores[msg.author]);
         currentTriviaQuestion = null;
