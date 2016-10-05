@@ -1,6 +1,7 @@
 var Discord = require("discord.js");
 var Exec    = require('child_process').exec;
 var Http    = require('http');
+var Score   = require('string_score');
 var startTime = new Date();
 // Get the email and password
 try {
@@ -64,9 +65,9 @@ Permissions.checkPermission = function (user,permission){
 var triviaScores = {};
 var currentTriviaQuestion = null;
 var triviaURL = 'http://jservice.io/api';
-var TextSimilarity = require('textsimilarity');
 var triviaAnswerMarkers = {};
 var triviaSimilarityThreshold = 0.75;
+var triviaAccuracyThreshold = 0.70;
 
 try {
   triviaScores = require("./triviaScores.json");
@@ -436,9 +437,10 @@ var commands = {
       if (triviaScores[msg.author] == undefined) {
           triviaScores[msg.author] = 0;
       }
-      var similarity = TextSimilarity(answer, correct);
-      console.log("Got answer with a similarity of " + similarity);
-      if (similarity > triviaSimilarityThreshold) {  
+      var similarity = answer.score(correct, triviaSimilarityThreshold);
+      console.log(correct + " vs " + answer);
+      console.log("Got answer with a similarity of " + similarity + "/" + triviaAccuracyThreshold);
+      if (similarity >= triviaAccuracyThreshold) {  
         triviaScores[msg.author] += parseInt(currentTriviaQuestion["value"], 10);
         bot.sendMessage(msg.channel, "That is correct " + msg.author + ", your score is now: $" + triviaScores[msg.author]);
         currentTriviaQuestion = null;
