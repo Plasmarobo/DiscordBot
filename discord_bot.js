@@ -27,12 +27,12 @@ function powerCycle()
 }
 
 function sanitizeAnswer(correct) {
-      correct = correct.replace(/[^\w\s]/i, "");
-      correct = correct.replace(/^(the|a|an) /i, "");
-      correct = correct.replace(/<(.|\n)*?>/g, '');
-      correct = correct.replace(/\&/g, 'and');
-      correct = correct.trim();
-      correct = correct.toLowerCase();
+  correct = correct.toLowerCase();
+  correct = correct.replace(/[^\w\s]/i, "");
+  correct = correct.replace(/^(the|a|an) /i, "");
+  correct = correct.replace(/<(.|\n)*?>/g, '');
+  correct = correct.replace(/\&/g, 'and');
+  correct = correct.trim();
   return correct;
 }
 
@@ -67,7 +67,7 @@ var currentTriviaQuestion = null;
 var triviaURL = 'http://jservice.io/api';
 var triviaAnswerMarkers = {};
 var triviaSimilarityThreshold = 0.75;
-var triviaAccuracyThreshold = 0.70;
+var triviaAccuracyThreshold = 0.6;
 
 try {
   triviaScores = require("./triviaScores.json");
@@ -425,15 +425,8 @@ var commands = {
         return;
       }
       var correct = sanitizeAnswer(currentTriviaQuestion["answer"]);
-      var answer = suffix;
-      answer = answer.replace(/\s+(&nbsp;|&)\s+/i, " and ");
-      answer = answer.replace(/[^\w\s]/i, "");
-      answer = answer.replace(/^(what|whats|where|wheres|who|whos) /i, "");
-      answer = answer.replace(/^(is|are|was|were) /, "");
-      answer = answer.replace(/^(the|a|an) /i, "");
-      answer = answer.replace(/\?+$/, "");
-      answer = answer.trim();
-      answer = answer.toLowerCase();
+      var answer = sanitizeAnswer(suffix);
+      
       if (triviaScores[msg.author] == undefined) {
           triviaScores[msg.author] = 0;
       }
