@@ -28,7 +28,6 @@ function powerCycle()
 
 function sanitizeAnswer(correct) {
   correct = correct.toLowerCase();
-  correct = correct.replace(/[^\w\s]/i, "");
   correct = correct.replace(/^(the|a|an) /i, "");
   correct = correct.replace(/<(.|\n)*?>/g, '');
   correct = correct.replace(/\&/g, 'and');
