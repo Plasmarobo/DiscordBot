@@ -695,4 +695,4 @@ bot.on('disconnected', function(){
   }
 });
 
-bot.login(AuthDetails.email, AuthDetails.password);
+bot.login(AuthDetails.token);
