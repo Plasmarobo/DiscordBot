@@ -1,20 +1,10 @@
-var Discord = require("discord.js");
+const Discord = require("discord.js");
+const bot = new Discord.Client();
+const token = process.env.DISCORD_TOKEN;
 var Exec    = require('child_process').exec;
 var Http    = require('http');
 var Score   = require('string_score');
 var startTime = new Date();
-// Get the email and password
-try {
-  var AuthDetails = require("./auth.json");
-} catch (e){
-  console.log("Please create an auth.json like auth.json.example with at least an email and password.");
-  process.exit();
-}
-//instead of MAD INSECURE auth.json
-//use environment variables like a sane fucking person
-//AuthDetails.email = process.env.DISCORD_EMAIL;
-//stiiiiill insecure
-//AuthDetails.password = process.env.DISCORD_PASSWORD;
 
 function powerCycle()
 {
@@ -88,23 +78,23 @@ var commands = {
   "ping": {
       description: "responds pong, useful for checking if bot is alive",
       process: function(bot, msg, suffix) {
-          bot.sendMessage(msg.channel, msg.sender+" pong!");
+          msg.channel.send( msg.sender+" pong!");
           if(suffix){
-              bot.sendMessage(msg.channel, "note that !ping takes no arguments!");
+              msg.channel.send( "note that !ping takes no arguments!");
           }
       }
   },
   "servers": {
       description: "lists servers bot is connected to",
-      process: function(bot,msg){bot.sendMessage(msg.channel,bot.servers);}
+      process: function(bot,msg){msg.channel.send(bot.servers);}
   },
   "channels": {
       description: "lists channels bot is connected to",
-      process: function(bot,msg) { bot.sendMessage(msg.channel,bot.channels);}
+      process: function(bot,msg) { msg.channel.send(bot.channels);}
   },
   "myid": {
       description: "returns the user id of the sender",
-      process: function(bot,msg){bot.sendMessage(msg.channel,msg.author.id);}
+      process: function(bot,msg){msg.channel.send(msg.author.id);}
   },
   "idle": {
       description: "sets bot status to idle",
@@ -117,13 +107,13 @@ var commands = {
   "say": {
       usage: "<message>",
       description: "bot says message",
-      process: function(bot,msg,suffix){ bot.sendMessage(msg.channel,suffix);}
+      process: function(bot,msg,suffix){ msg.channel.send(suffix);}
   },
   "update": {
       description: "bot will perform a git pull master and restart with the new code",
       process: function(bot,msg,suffix) {
           
-            bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
+            msg.channel.send("fetching updates...",function(error,sentMsg){
                 console.log("updating...");
               var spawn = require('child_process').spawn;
                 var log = function(err,stdout,stderr){
@@ -146,7 +136,7 @@ var commands = {
                         });
                         npm.on("close",function(code){
                             console.log("goodbye");
-                            bot.sendMessage(msg.channel,"brb!",function(){
+                            msg.channel.send("brb!",function(){
                                 bot.logout(function(){
                                     process.exit();
                                 });
@@ -163,11 +153,11 @@ var commands = {
       process: function(bot,msg,suffix) {
           var commit = require('child_process').spawn('git', ['log','-n','1']);
           commit.stdout.on('data', function(data) {
-              bot.sendMessage(msg.channel,data);
+              msg.channel.send(data);
           });
           commit.on('close',function(code) {
               if( code != 0){
-                  bot.sendMessage(msg.channel,"failed checking git version!");
+                  msg.channel.send("failed checking git version!");
               }
           });
       }
@@ -184,10 +174,10 @@ var commands = {
           console.log(bot.joinServer(suffix,function(error,server) {
               console.log("callback: " + arguments);
               if(error){
-                  bot.sendMessage(msg.channel,"failed to join: " + error);
+                  msg.channel.send("failed to join: " + error);
               } else {
                   console.log("Joined server " + server);
-                  bot.sendMessage(msg.channel,"Successfully joined " + server);
+                  msg.channel.send("Successfully joined " + server);
               }
           }));
       }
@@ -199,15 +189,15 @@ var commands = {
       var args = suffix.split(" ");
       var name = args.shift();
       if(!name){
-        bot.sendMessage(msg.channel,"!alias " + this.usage + "\n" + this.description);
+        msg.channel.send("!alias " + this.usage + "\n" + this.description);
       } else if(commands[name] || name === "help"){
-        bot.sendMessage(msg.channel,"overwriting commands with aliases is not allowed!");
+        msg.channel.send("overwriting commands with aliases is not allowed!");
       } else {
         var command = args.shift();
         aliases[name] = [command, args.join(" ")];
         //now save the new alias
         require("fs").writeFile("./alias.json",JSON.stringify(aliases,null,2), null);
-        bot.sendMessage(msg.channel,"created alias " + name);
+        msg.channel.send("created alias " + name);
       }
     }
   },
@@ -218,19 +208,19 @@ var commands = {
       if(suffix){
         var users = msg.channel.server.members.getAll("username",suffix);
         if(users.length == 1){
-          bot.sendMessage(msg.channel, "The id of " + users[0] + " is " + users[0].id)
+          msg.channel.send( "The id of " + users[0] + " is " + users[0].id)
         } else if(users.length > 1){
           var response = "multiple users found:";
           for(var i=0;i<users.length;i++){
             var user = users[i];
             response += "\nThe id of " + user + " is " + user.id;
           }
-          bot.sendMessage(msg.channel,response);
+          msg.channel.send(response);
         } else {
-          bot.sendMessage(msg.channel,"No user " + suffix + " found!");
+          msg.channel.send("No user " + suffix + " found!");
         }
       } else {
-        bot.sendMessage(msg.channel, "The id of " + msg.author + " is " + msg.author.id);
+        msg.channel.send( "The id of " + msg.author + " is " + msg.author.id);
       }
     }
   },
@@ -239,9 +229,9 @@ var commands = {
     description: 'Executes arbitrary javascript in the bot process. User must have "eval" permission',
     process: function(bot,msg,suffix) {
       if(Permissions.checkPermission(msg.author,"eval")){
-        bot.sendMessage(msg.channel, eval(suffix,bot));
+        msg.channel.send( eval(suffix,bot));
       } else {
-        bot.sendMessage(msg.channel, msg.author + " doesn't have permission to execute eval!");
+        msg.channel.send( msg.author + " doesn't have permission to execute eval!");
       }
     }
   },
@@ -250,7 +240,7 @@ var commands = {
     description: 'Executes shell code as the bot. User must have "eval" permission',
     process: function(bot, msg, suffix) {
       if(Permissions.checkPermission(msg.author, "eval")){
-        bot.sendMessage(msg.channel,"Executing Arbitrary Shell Script...",function(error,sentMsg){
+        msg.channel.send("Executing Arbitrary Shell Script...",function(error,sentMsg){
           console.log("Executing Arbitrary Shell Script...");
             var spawn = require('child_process').spawn;
             var log = function(err,stdout,stderr){
@@ -264,18 +254,18 @@ var commands = {
             var result = spawn(cmd, args);
             result.stdout.on('data',function(data){
               console.log(data.toString());
-              bot.sendMessage(msg.channel, data.toString());
+              msg.channel.send( data.toString());
             });
             result.stderr.on('data',function(data){
               console.log(data.toString());
-              bot.sendMessage(msg.channel, data.toString());
+              msg.channel.send( data.toString());
             });
             result.on("close",function(code){
-              bot.sendMessage(msg.channel,"Execution Complete!");
+              msg.channel.send("Execution Complete!");
             });
         });
       } else {
-        bot.sendMessage(msg.channel, msg.author + " doesn't' have permission to execute shell!");
+        msg.channel.send( msg.author + " doesn't' have permission to execute shell!");
       }
     }
   },
@@ -286,7 +276,7 @@ var commands = {
       var max = 10;
       if(suffix) max = suffix;
       var val = Math.floor(Math.random() * max) + 1;
-      bot.sendMessage(msg.channel,msg.author + " rolled a " + val);
+      msg.channel.send(msg.author + " rolled a " + val);
     }
   },
   "msg": {
@@ -308,28 +298,28 @@ var commands = {
         content: target + ", " + msg.author + " said: " + message
       };
       updateMessagebox();
-      bot.sendMessage(msg.channel,"message saved.")
+      msg.channel.send("message saved.")
     }
   },
   "say hello": {
     usage: "",
     description: "says hello!",
     process: function(bot,msg,suffix) {
-      bot.sendMessage(msg.channel,"Hello!")
+      msg.channel.send("Hello!")
     }
   },
   "uptime": {
     usage: "",
     description: "Prints uptime",
     process: function(bot, msg, suffix) {
-      bot.sendMessage(msg.channel, "Up since: " + startTime.toString());
+      msg.channel.send( "Up since: " + startTime.toString());
     }
   },
   "debug": {
     usage: "",
     description: "Dumps what plasmabot hears",
     process: function(bot, msg, suffix) {
-      bot.sendMessage(msg.channel, JSON.stringify(msg.content.replace("@","")));
+      msg.channel.send( JSON.stringify(msg.content.replace("@","")));
     }
   },
   "amend": {
@@ -348,20 +338,20 @@ var commands = {
           target = msg.channel.server.members.get("username",user);
         }
         if(!target){
-          bot.sendMessage(msg.channel,"I don't know " + user);
+          msg.channel.send("I don't know " + user);
           return;
         } else {
           if ((superlatives[target] != undefined) && (superlatives[target].length > superlative_id))
           {
             superlatives[target][superlative_id] = new_text;
-            bot.sendMessage(msg.channel, "Superlative updated!");
+            msg.channel.send( "Superlative updated!");
           } else {
-            bot.sendMessage(msg.channel,"Target doesn't have " + (superlative_id + 1) + " superlatives.");
+            msg.channel.send("Target doesn't have " + (superlative_id + 1) + " superlatives.");
           }
           return;
         }
       } else {
-        bot.sendMessage(msg.channel,"Couldn't understand what you wanted to amend.");
+        msg.channel.send("Couldn't understand what you wanted to amend.");
       }
     }
   },
@@ -370,7 +360,7 @@ var commands = {
     process: function(bot, msg, suffix) {
       // Get clue
       if (currentTriviaQuestion != null) {
-        bot.sendMessage(msg.channel, "Well, the answer was: " + currentTriviaQuestion["answer"]);
+        msg.channel.send( "Well, the answer was: " + currentTriviaQuestion["answer"]);
       }
       triviaAnswerMarkers = {};
    
@@ -385,7 +375,7 @@ var commands = {
           currentTriviaQuestion = JSON.parse(body)[0];
           console.log("Got: " + JSON.stringify(currentTriviaQuestion));
           if (currentTriviaQuestion["invalid_count"] != null) {
-            bot.sendMessage(msg.channel, "Looks like this next one might be a bit off...");
+            msg.channel.send( "Looks like this next one might be a bit off...");
           }
           console.log("value: " + currentTriviaQuestion["value"]);
           if(!isNumeric(currentTriviaQuestion["value"])) {
@@ -395,11 +385,11 @@ var commands = {
           }
           //Strip bad stuff from answer
           
-          bot.sendMessage(msg.channel, currentTriviaQuestion["category"]["title"] + " for $" + currentTriviaQuestion["value"] + ": " + currentTriviaQuestion["question"] + ".");
+          msg.channel.send( currentTriviaQuestion["category"]["title"] + " for $" + currentTriviaQuestion["value"] + ": " + currentTriviaQuestion["question"] + ".");
         });
       }).on('error', function(e){
         console.log("Error Requesting Clue: ", e);
-        bot.sendMessage(msg.channel, "Er, looks like I couldn't find a clue for you...");
+        msg.channel.send( "Er, looks like I couldn't find a clue for you...");
       });
   
     }
@@ -416,11 +406,11 @@ var commands = {
     description: "Answers a Jeopardy question",
     process: function(bot, msg, suffix) {
       if (triviaAnswerMarkers[msg.author] == true) {
-        bot.sendMessage(msg.channel, "You've already tried and failed, give up.");
+        msg.channel.send( "You've already tried and failed, give up.");
         return;
       }
       if (currentTriviaQuestion == null) {
-        bot.sendMessage(msg.channel, "Huh, there doesn't seem to be a question.");
+        msg.channel.send( "Huh, there doesn't seem to be a question.");
         return;
       }
       var correct = sanitizeAnswer(currentTriviaQuestion["answer"]);
@@ -434,12 +424,12 @@ var commands = {
       console.log("Got answer with a similarity of " + similarity + "/" + triviaAccuracyThreshold);
       if (similarity >= triviaAccuracyThreshold) {  
         triviaScores[msg.author] += parseInt(currentTriviaQuestion["value"], 10);
-        bot.sendMessage(msg.channel, "That is correct " + msg.author + ", your score is now: $" + triviaScores[msg.author]);
+        msg.channel.send( "That is correct " + msg.author + ", your score is now: $" + triviaScores[msg.author]);
         currentTriviaQuestion = null;
         triviaAnswerMarkers = {};
       } else {
         triviaScores[msg.author] -= parseInt(currentTriviaQuestion["value"], 10);
-        bot.sendMessage(msg.channel, "Nope! Sorry. Your score is now: $" + triviaScores[msg.author]);
+        msg.channel.send( "Nope! Sorry. Your score is now: $" + triviaScores[msg.author]);
         triviaAnswerMarkers[msg.author] = true;
       }
       require("fs").writeFile("./triviaScores.json", JSON.stringify(triviaScores,null,2), null);
@@ -452,7 +442,7 @@ var commands = {
       for(var player in triviaScores) {
         scores += player + ": $" + triviaScores[player] + "\n";
       }
-      bot.sendMessage(msg.channel, scores);
+      msg.channel.send( scores);
     }
   },
 };
@@ -488,6 +478,7 @@ function getDirectories(srcpath) {
     return fs.statSync(path.join(srcpath, file)).isDirectory();
   });
 }
+
 function load_plugins(){
   var plugin_folders = getDirectories("./plugins");
   for (var i = 0; i < plugin_folders.length; i++) {
@@ -510,8 +501,6 @@ function load_plugins(){
   console.log("Loaded " + Object.keys(commands).length + " chat commands type !help in Discord for a commands list.")
 }
 
-var bot = new Discord.Client();
-
 bot.on("ready", function () {
   console.log("Ready to begin! Serving in " + bot.channels.length + " channels");
   load_plugins();
@@ -527,7 +516,7 @@ bot.on("message", function (msg) {
       flips.forEach(function(){
         str += ("┬─┬﻿ ノ( ゜-゜ノ)\t");
       });
-      bot.sendMessage(msg.channel, str);
+      msg.channel.send( str);
     }
   }
 
@@ -541,7 +530,7 @@ bot.on("message", function (msg) {
       target = msg.channel.server.members.get("username",user);
     }
     if(!target){
-      bot.sendMessage(msg.channel,"I don't know " + user);
+      msg.channel.send("I don't know " + user);
       return;
     } else {
       var message = target + " is ";
@@ -550,7 +539,7 @@ bot.on("message", function (msg) {
         message += superlatives[target][superlative] + ", ";
       }
       message = message.substring(0, message.length-2) + ".";
-      bot.sendMessage(msg.channel,message);
+      msg.channel.send(message);
       return;
     }
     
@@ -574,11 +563,11 @@ bot.on("message", function (msg) {
     console.log(target + " is now " + superlative);
     console.log(superlatives[target]);
     require("fs").writeFile("./superlatives.json",JSON.stringify(superlatives,null,2), null);
-    bot.sendMessage(msg.channel, "Alright, " + target + " is " + superlative);
+    msg.channel.send( "Alright, " + target + " is " + superlative);
     return;
   }
   
-  if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
+  if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention) == 0)){
     console.log("treating " + msg.content + " from " + msg.author + " as command");
     var cmdTxt = msg.content.split(" ")[0].substring(1);
       var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
@@ -587,7 +576,7 @@ bot.on("message", function (msg) {
           cmdTxt = msg.content.split(" ")[1];
           suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
         } catch(e){ //no command
-          bot.sendMessage(msg.channel,"Yes?");
+          msg.channel.send("Yes?");
           return;
         }
       }
@@ -599,7 +588,7 @@ bot.on("message", function (msg) {
     var cmd = commands[cmdTxt];
         if(cmdTxt === "help"){
             //help is special since it iterates over the other commands
-      bot.sendMessage(msg.author,"Available Commands:", function(){
+      msg.author.send("Available Commands:", function(){
         for(var cmd in commands) {
           var info = "!" + cmd;
           var usage = commands[cmd].usage;
@@ -610,7 +599,7 @@ bot.on("message", function (msg) {
           if(description){
             info += "\n\t" + description;
           }
-          bot.sendMessage(msg.author,info);
+          msg.author.send(info);
         }
       });
         }
@@ -618,13 +607,13 @@ bot.on("message", function (msg) {
       try{
         cmd.process(bot,msg,suffix);
       } catch(e){
-        bot.sendMessage(msg.channel, "command " + cmdTxt + " failed :(\n" + e.stack);
+        msg.channel.send( "command " + cmdTxt + " failed :(\n" + e.stack);
       }
       //if ("process" in cmd ){ 
       //  cmd.process(bot,msg,suffix);
       //}
     } else {
-      bot.sendMessage(msg.channel, "Invalid command " + cmdTxt);
+      msg.channel.send( "Invalid command " + cmdTxt);
     }
   } else {
     //message isn't a command or is from us
@@ -634,12 +623,10 @@ bot.on("message", function (msg) {
         }
         
         if (msg.author != bot.user && msg.isMentioned(bot.user)) {
-                bot.sendMessage(msg.channel,msg.author + ", you called?");
+                msg.channel.send(msg.author + ", you called?");
         }
     }
 });
- 
-
 
 //Log user status changes
 bot.on("presence", function(user,status,gameId) {
@@ -655,7 +642,7 @@ bot.on("presence", function(user,status,gameId) {
         var channel = bot.channels.get("id",message.channel);
         delete messagebox[user.id];
         updateMessagebox();
-        bot.sendMessage(channel,message.content);
+        channel.send(message.content);
       }
     }
   } catch(e) {
@@ -695,4 +682,4 @@ bot.on('disconnected', function(){
   }
 });
 
-bot.login(AuthDetails.email, AuthDetails.password);
+bot.login(token);
