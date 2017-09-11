@@ -682,4 +682,8 @@ bot.on('disconnected', function(){
   }
 });
 
+<<<<<<< HEAD
 bot.login(token);
+=======
+bot.login(AuthDetails.token);
+>>>>>>> d4881ee52666f3410290c33d59dd451bf612115e
