@@ -84,14 +84,14 @@ var commands = {
           }
       }
   },
-  "servers": {
+  /*"servers": {
       description: "lists servers bot is connected to",
       process: function(bot,msg){msg.channel.send(bot.servers);}
   },
   "channels": {
       description: "lists channels bot is connected to",
       process: function(bot,msg) { msg.channel.send(bot.channels);}
-  },
+  },*/
   "myid": {
       description: "returns the user id of the sender",
       process: function(bot,msg){msg.channel.send(msg.author.id);}
@@ -206,7 +206,7 @@ var commands = {
     description: "Returns the unique id of a user. This is useful for permissions.",
     process: function(bot,msg,suffix) {
       if(suffix){
-        var users = msg.channel.server.members.getAll("username",suffix);
+        var users = msg.guild.members.find('username',suffix);
         if(users.length == 1){
           msg.channel.send( "The id of " + users[0] + " is " + users[0].id)
         } else if(users.length > 1){
@@ -289,9 +289,9 @@ var commands = {
       if(user.startsWith('<@')){
         user = user.substr(2,user.length-3);
       }
-      var target = msg.channel.server.members.get("id",user);
+      var target = msg.guild.members.find('id',user);
       if(!target){
-        target = msg.channel.server.members.get("username",user);
+        target = msg.guild.members.find('username',user);
       }
       messagebox[target.id] = {
         channel: msg.channel.id,
@@ -333,9 +333,9 @@ var commands = {
         var user = who[1];
         var superlative_id = who[2];
         var new_text = who[3];
-        var target = msg.channel.server.members.get("id",user);
+        var target = msg.guild.members.find('id',user);
         if(!target){
-          target = msg.channel.server.members.get("username",user);
+          target = msg.guild.members.find('username',user);
         }
         if(!target){
           msg.channel.send("I don't know " + user);
@@ -502,7 +502,7 @@ function load_plugins(){
 }
 
 bot.on("ready", function () {
-  console.log("Ready to begin! Serving in " + bot.channels.length + " channels");
+  console.log("Ready to begin!");
   load_plugins();
 });
 
@@ -523,11 +523,10 @@ bot.on("message", function (msg) {
   var who = msg.content.match(/\<\@([0-9]+)\>\swho\sis\s\<\@([0-9]+)\>/i)
   if (who != null)
   {
-    console.log(who);
     var user = who[2];
-    var target = msg.channel.server.members.get("id",user);
+    var target = msg.guild.members.find('id',user);
     if(!target){
-      target = msg.channel.server.members.get("username",user);
+      target = msg.guild.members.find('username',user);
     }
     if(!target){
       msg.channel.send("I don't know " + user);
@@ -548,12 +547,11 @@ bot.on("message", function (msg) {
   var whois = msg.content.match(/\<\@([0-9]+)\>\s\<\@([0-9]+)\>\sis\s(.*)/i);
   if (whois != null)
   {
-    console.log(whois);
     var user = whois[2];
     var superlative = whois[3];
-    var target = msg.channel.server.members.get("id",user);
+    var target = msg.guild.members.find('id',user);
     if(!target){
-      target = msg.channel.server.members.get("username",user);
+      target = msg.guild.members.find('username',user);
     }
     if(!superlatives.hasOwnProperty(target))
     {
@@ -637,7 +635,7 @@ bot.on("presence", function(user,status,gameId) {
       if(messagebox.hasOwnProperty(user.id)){
         console.log("found message for " + user.id);
         var message = messagebox[user.id];
-        var channel = bot.channels.get("id",message.channel);
+        var channel = bot.channels.find('id',message.channel);
         delete messagebox[user.id];
         updateMessagebox();
         channel.send(message.content);
