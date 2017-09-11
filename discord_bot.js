@@ -84,25 +84,9 @@ var commands = {
           }
       }
   },
-  /*"servers": {
-      description: "lists servers bot is connected to",
-      process: function(bot,msg){msg.channel.send(bot.servers);}
-  },
-  "channels": {
-      description: "lists channels bot is connected to",
-      process: function(bot,msg) { msg.channel.send(bot.channels);}
-  },*/
   "myid": {
       description: "returns the user id of the sender",
       process: function(bot,msg){msg.channel.send(msg.author.id);}
-  },
-  "idle": {
-      description: "sets bot status to idle",
-      process: function(bot,msg){ bot.setStatusIdle();}
-  },
-  "online": {
-      description: "sets bot status to online",
-      process: function(bot,msg){ bot.setStatusOnline();}
   },
   "say": {
       usage: "<message>",
@@ -514,7 +498,7 @@ bot.on("message", function (msg) {
     {
       var str = "";
       flips.forEach(function(){
-        str += ("┬─┬﻿ ノ( ゜-゜ノ)\t");
+        str += ("┬─┬﻿ /[o_o/]\t");
       });
       msg.channel.send( str);
     }
@@ -586,24 +570,22 @@ bot.on("message", function (msg) {
       suffix = alias[1] + " " + suffix;
     }
     var cmd = commands[cmdTxt];
-        if(cmdTxt === "help"){
-            //help is special since it iterates over the other commands
-      msg.author.send("Available Commands:", function(){
-        for(var cmd in commands) {
-          var info = "!" + cmd;
+    if(cmdTxt === "help"){
+      //help is special since it iterates over the other commands
+      msg.author.send("Available Commands:\n");
+      for(var cmd in commands) {
+          var help_str = "`" + cmd + "`:";
           var usage = commands[cmd].usage;
           if(usage){
-            info += " " + usage;
+            help_str += " " + usage;
           }
           var description = commands[cmd].description;
           if(description){
-            info += "\n\t" + description;
+            help_str += "\n\t" + description;
           }
-          msg.author.send(info);
-        }
-      });
-        }
-    else if(cmd) {
+          msg.author.send(help_str);
+      }
+    } else if(cmd) {
       try{
         cmd.process(bot,msg,suffix);
       } catch(e){
