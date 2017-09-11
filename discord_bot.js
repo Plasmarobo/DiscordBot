@@ -567,14 +567,16 @@ bot.on("message", function (msg) {
     return;
   }
   
-  if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention) == 0)){
-    console.log("treating " + msg.content + " from " + msg.author + " as command");
+  if((msg.author.id != bot.user.id) && (msg.content[0] === '!' || msg.isMentioned(bot.user))){
+    console.log("treating \"" + msg.content + "\" from " + msg.author + " as command");
     var cmdTxt = msg.content.split(" ")[0].substring(1);
       var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
-      if(msg.content.indexOf(bot.user.mention()) == 0){
+      if(msg.isMentioned(bot.user)){
         try {
-          cmdTxt = msg.content.split(" ")[1];
-          suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
+          var payload = msg.content.split(bot.user)[1].trim(); 
+          cmdTxt = payload.split(" ")[0];
+          suffix = payload.substring(cmdTxt.length+1);
+          console.log(payload + "<" + cmdTxt + " \"" + suffix + "\">");
         } catch(e){ //no command
           msg.channel.send("Yes?");
           return;
@@ -620,10 +622,6 @@ bot.on("message", function (msg) {
         //drop our own messages to prevent feedback loops
         if(msg.author == bot.user){
             return;
-        }
-        
-        if (msg.author != bot.user && msg.isMentioned(bot.user)) {
-                msg.channel.send(msg.author + ", you called?");
         }
     }
 });
