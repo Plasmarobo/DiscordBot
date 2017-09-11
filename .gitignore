@@ -33,6 +33,7 @@ alias.json
 superlatives.json
 permissions.json
 messagebox.json
+triviaScores.json
 
 # Don't commit weird merge junk
 .orig
