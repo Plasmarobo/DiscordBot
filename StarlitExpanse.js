@@ -2,6 +2,26 @@ var StarlitExpanse = function() {
   this.players = {};
   this.parties = {};
   this.adventures = {};
+  this.questions = {};
+}
+
+StarlitExpanse.prototype.PoseQuestion = function(user_id, question, choices) {
+  this.questions[user_id] = {
+    'question': question,
+    'choices' : choices //option index, option text, option keyword, callback 
+  }
+  return question;
+}
+
+StarlitExpanse.prototype.TranslateAnswer = function(user_id, result) {
+  var question = this.quetions[user_id];
+  if (result == q['choices']['option_index'] ||
+      result == q['choices']['option_keyword'] ||
+      result == q['choices']['option_text']) {
+    return q['choices']['callback'](user_id, q, result);
+  } else {
+    return undefined;
+  }
 }
 
 StarlitExpanse.prototype.StatBlock = function() {
@@ -43,3 +63,5 @@ StarlitExpanse.prototype.Player = function(user_id) {
   this.status = [];  
   this.user_id = user_id;
 }
+
+
