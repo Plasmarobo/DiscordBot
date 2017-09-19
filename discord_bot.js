@@ -4,6 +4,7 @@ const token = process.env.DISCORD_TOKEN;
 var Exec    = require('child_process').exec;
 var Http    = require('http');
 var Score   = require('string_score');
+var Rpg     = require('StarlitExpanse.js');
 var startTime = new Date();
 
 function powerCycle()
@@ -73,6 +74,7 @@ var config = {
 
 var aliases;
 var messagebox;
+var rpg = Rpg.load("./rpg.json");
 
 var commands = {
   "ping": {
@@ -137,7 +139,10 @@ var commands = {
       process: function(bot,msg,suffix) {
           var commit = require('child_process').spawn('git', ['log','-n','1']);
           commit.stdout.on('data', function(data) {
-              msg.channel.send(data);
+              if(data.length != 0) 
+                msg.channel.send(data);
+              else
+                msg.channel.send("I don't know what version I am");
           });
           commit.on('close',function(code) {
               if( code != 0){
@@ -429,6 +434,13 @@ var commands = {
       msg.channel.send( scores);
     }
   },
+  "rpg" : {
+    description: "sends message to rpg subsystem",
+    process: function(bot, msg, suffix) {
+      msg.content = suffix;
+      rpg.ProcMessage(msg);
+    }
+  }
 };
 
 try{
@@ -493,15 +505,25 @@ bot.on("ready", function () {
 bot.on("message", function (msg) {
   //check if message is a command
   var flips = msg.content.match(/(\(╯°□°\）╯︵ ┻━┻)/g);
+  if(flips != null)
   {
-    if(flips != null)
-    {
-      var str = "";
-      flips.forEach(function(){
-        str += ("┬─┬﻿ /[o_o/]\t");
-      });
-      msg.channel.send( str);
-    }
+    var str = "";
+    flips.forEach(function(){
+      str += ("┬─┬﻿ /[o_o/]\t");
+    });
+    msg.channel.send( str);
+  }
+  
+  var love = msg.content.match(/(what is love)/i);
+  if (love != null)
+  {
+    msg.channel.send("Baby don't hurt me, don't hurt me, no more!", { file: "https://i.giphy.com/media/12mgpZe6brh2nu/giphy.webp"});
+  }
+  
+  var rick = msg.content.match(/(never gonna give you up)/i);
+  if (rick != null)
+  {
+    msg.channel.send("Never gonna let you down\nNever gonna run around and\nDesert you!", { file: "https://i.giphy.com/media/qQx7B5z3hG19K/giphy.webp"});
   }
 
   var who = msg.content.match(/\<\@([0-9]+)\>\swho\sis\s\<\@([0-9]+)\>/i)
@@ -552,18 +574,18 @@ bot.on("message", function (msg) {
   if((msg.author.id != bot.user.id) && (msg.content[0] === '!' || msg.isMentioned(bot.user))){
     console.log("treating \"" + msg.content + "\" from " + msg.author + " as command");
     var cmdTxt = msg.content.split(" ")[0].substring(1);
-      var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
-      if(msg.isMentioned(bot.user)){
-        try {
-          var payload = msg.content.split(bot.user)[1].trim(); 
-          cmdTxt = payload.split(" ")[0];
-          suffix = payload.substring(cmdTxt.length+1);
-          console.log(payload + "<" + cmdTxt + " \"" + suffix + "\">");
-        } catch(e){ //no command
-          msg.channel.send("Yes?");
-          return;
-        }
+    var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
+    if(msg.isMentioned(bot.user)){
+      try {
+        var payload = msg.content.split(bot.user)[1].trim(); 
+        cmdTxt = payload.split(" ")[0];
+        suffix = payload.substring(cmdTxt.length+1);
+        console.log(payload + "<" + cmdTxt + " \"" + suffix + "\">");
+      } catch(e){ //no command
+        msg.channel.send("Yes?");
+        return;
       }
+    }
     alias = aliases[cmdTxt];
     if(alias){
       cmdTxt = alias[0];
