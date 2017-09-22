@@ -1,10 +1,14 @@
 const Discord = require("discord.js");
-const bot = new Discord.Client();
+
+const bot   = new Discord.Client();
 const token = process.env.DISCORD_TOKEN;
 var Exec    = require('child_process').exec;
 var Http    = require('http');
 var Score   = require('string_score');
-var Rpg     = require('StarlitExpanse.js');
+var path    = require('path');
+var SLEX    = require("./StarlitExpanse");
+var Rpg = new SLEX.StarlitExpanse();
+
 var startTime = new Date();
 
 function powerCycle()
@@ -74,7 +78,12 @@ var config = {
 
 var aliases;
 var messagebox;
-var rpg = Rpg.load("./rpg.json");
+
+try {
+  Rpg.Load('./starlit.json');
+} catch(e) {
+  console.log(e.message);
+}
 
 var commands = {
   "ping": {
@@ -434,11 +443,28 @@ var commands = {
       msg.channel.send( scores);
     }
   },
-  "rpg" : {
-    description: "sends message to rpg subsystem",
+  "enablerpg" : {
+    description: "enables rpg listening on channel",
     process: function(bot, msg, suffix) {
-      msg.content = suffix;
-      rpg.ProcMessage(msg);
+      Rpg.AddChannel(msg.channel.id);
+      console.log("Enabled on " + msg.channel.id);
+      if (msg.channel.type == "dm") {
+        Rpg.Whisper(msg.author.id, "Enabled RPG Functions");
+      } else {
+        msg.channel.send("Enabled RPG Functions");
+      }
+    }
+  },
+  "disablerpg" : {
+    description: "disables rpg listening on channel",
+    process: function(bot, msg, suffix) {
+      if (msg.channel.type == "dm") {
+        Rpg.Whisper(msg.author.id, "Disabled RPG Functions");
+      } else {
+        msg.channel.send("Disabled RPG Functions");
+      }
+      console.log("Disabled on " + msg.channel.id);
+      Rpg.RemoveChannel(msg.channel);
     }
   }
 };
@@ -500,10 +526,16 @@ function load_plugins(){
 bot.on("ready", function () {
   console.log("Ready to begin!");
   load_plugins();
+  Rpg.ConnectDiscordBot(this, this.guilds[0]);
 });
 
 bot.on("message", function (msg) {
-  //check if message is a command
+  // Check if channel is Rpg channel
+  if (Rpg.isEnabledOn(msg.channel.id)) {
+      Rpg.ProcMessage(msg);
+      return;
+  }
+  
   var flips = msg.content.match(/(\(╯°□°\）╯︵ ┻━┻)/g);
   if(flips != null)
   {
