@@ -1,5 +1,5 @@
 'used strict';
-exports.id='StarlitExpanse'
+exports.id='StarlitExpanse';
 const mixwith = require('mixwith');
 
 function StarlitExpanse() {
@@ -41,6 +41,24 @@ function StarlitExpanse() {
       help_text: "",
       usage: "",
       process: function(user_id, command, channel) {
+        var adventure_name = command.split(/ (.+)/)[1];
+        var start_adventure = function() {
+          try {
+            var adventure = require("./Adventures/" + adventure_name);
+            this.adventures[user_id] = adventure;
+          } catch(e) {
+            console.log("=========Fault =========");
+            console.log("From: " + user_id);
+            console.log("CMD: \"" + command + "\"");
+            console.log(e.stack);
+            console.log("========================");
+          }
+        }.bind(this);
+        if (user_id in this.adventures) {
+          this.Confirmation(user_id, "Abandon your current quest?", start_adventure);
+        } else {
+          start_adventure();
+        }
         return true;
       }.bind(this)
     },
@@ -655,6 +673,11 @@ StarlitExpanse.prototype.PoseQuestion = function(user_id, question) {
   this.Whisper(user_id, q_text);
 }
 
+StarlitExpanse.prototype.ClearQuestion = function(user_id) {
+  if (this.questions.hasOwnProperty(user_id))
+    delete this.questions[user_id];
+}
+
 StarlitExpanse.prototype.TranslateAnswer = function(user_id, result) {
   var q = this.questions[user_id];
   if (((q['choices'] == null) || (q['choices'].length == 0)) && q['callback'] != null) {
@@ -795,158 +818,222 @@ StarlitExpanse.prototype.inviteToParty = function(party, user_ids) {
 
 //A basic encounter or building block of an adventure
 let Describable = (superclass) => class extends superclass {
-
-  get Name() {
-    return this.name || (this.name = "Empty Area");
-  }
-  
-  get Description() {
-    return this.description || (this.description = "This area is empty. There are no features or objects.");
+  constructor(...args) {
+    super(...args);
+    this.name = "Nothing";
+    this.description = "Nothing to describe.";
   }
 }
 
 let Attackable = (superclass) => class extends superclass {
+  constructor(...args) {
+    super(...args);
+    this._hp = 1;
+    this._defense = 1;
+    this._evasion = 1;
+  }
   
-  get HP() {
-    return this.hp || (this.hp = 1);
+  //Use getters to allow overrides for computing
+  get hp() {
+    return this._hp;
   } 
 
-  get Defense() {
-    return this.defense || (this.defense = 1);
+  get defense() {
+    return this._defense;
   }
 
-  get Evasion() {
-    return this.evasion || (this.evasion = 1);
+  get evasion() {
+    return this._evasion;
   }
 }
 
 let Statable = (superclass) => class extends superclass {
-  get Difficulty() {
-    return this.difficulty || (this.difficulty = 1);
+  constructor(...args) {
+    super(...args);
+    this.bypass_stats = {};
+    this.bypassed = false;
+    this.bypassed_description = "Open";
+    this.nonbypassed_description = "Closed";
   }
   
-  get Bypassed() {
-    return this.bypassed || (this.bypassed = false);
+  addBypassStat(stat, difficulty, trigger) {
+    this.bypass_stats[stat] = {difficulty, trigger};
   }
   
-  get ByPassedMessage() {
-    return this.bypassed_description || (this.bypassed_description = "Open");
-  }
-  
-  get NonBypassedMessage() {
-    return this.nonbypassed_description || (this.nonbypassed_description = "Closed");
-  }
-  
-  get BypassSkill() {
-    return this.bypass_stat || (this.bypass_stat = "lockpicking");
+  bypass(player,stat) {
+    if (stat in this.bypass_stats) {
+      var value = player.rollStat(stat);
+      if (value > this.bypass_stats[stat].difficulty) {
+        if (this.bypass_stats[stat].trigger !== undefined) {
+          this.bypass_stats[stat].trigger(this, player);
+        } else {
+          this.bypassed = true;
+          return true;
+        }
+      }
+    } else {
+      return false;
+    }
   }
 }
 
 let Atmospheric = (superclass) => class extends superclass {
-  get Breathable() {
-    return this.breathable || (this.breathable  = true);
-  }
-  
-  get Toxicity() {
-    return this.toxicity || (this.toxicity = 0);
-  }
-  
-  get Pressure() {
-    return this.pressure || (this.pressure = 1);
-  }
-  
-  get Temperature() {
-    return this.temperature || (this.temperature = 20);
+  constructor(...args) {
+    super(...args);
+    this.breathable = true;
+    this.toxicity = 0;
+    this.pressure = 1;
+    this.temperature = 20;
   }
 }
 
 let Container = (superclass) => class extends superclass {
-  get InventorySize() {
-    return this.inventory_size || (this.inventory_size = 1);
+  constructor(...args) {
+    this.inventory_size = 1;
+    this.inventory = {};
   }
   
-  get Inventory() {
-    return this.inventory || (this.inventory = []);
+  add(item, q = 1) {
+    if (item.name in this.inventory) {
+      this.inventory[item.name].quantitiy += q;
+    } else {
+      this.inventory[item.name] = {
+        quantitiy: q,
+        item: item
+      };
+    }
+  }
+  
+  remove(item, q = 1) {
+    if (item.name in this.inventory) {
+      if (q = 0 || this.inventory[item.name.quantitiy <= q]) {
+        delete this.inventory[item.name];
+      } else {
+        this.inventory[item.name].quantitiy -= q;
+      }
+    }
   }
 }
 
 let Ownable = (superclass) => class extends superclass {
-  get Faction() {
-    return this.faction || (this.faction = null);
-  }
-  
-  get Owner() {
-    return this.owner || (this.owner = null);
+  constructor(...args) {
+    super(...args);
+    this.faction = null;
+    this.owner = null;
   }
 }
 
 let Takeable = (superclass) => class extends superclass {
-  
-  get Taken() {
-    return this.taken || (this.taken = false);
+  constructor(...args) {
+    super(...args);
+    this.taken = false;
   }
   
-  get Given() {
-    return this.take_item || (this.take_item = null);
+  addTo(container) {
+    this.taken = true;
+    container.add(this);
   }
 }
 
 let Usable = (superclass) => class extends superclass {
-  
-  get Uses() {
-    return this.uses || (this.uses = 1);
+  constructor(...args) {
+    super(...args);
+    this.verbs = {};
   }
   
-  get MaxUses() {
-    return this.max_uses || (this.max_uses = 1);
+  use(player,verb) {
+    if(this.verbs.hasOwnProperty(verb)) {
+      var action = this.verbs[verb];
+      if (action.uses > 0) {
+        action.uses -= 1;
+        return action.callback(player, action, this);
+      } else {
+        return this.name + " has no " + action.use_name || "uses" + " remaining.";
+      }
+    } else {
+      return this.name + " does not respond to " + verb;
+    }
   }
   
-  get RegenTime() {
-    return this.regen_time || (this.regen_time = 0);
+  addAction(verb, use_name, callback, uses, max_uses) {
+    this.verbs[verb] = {
+      'use_name': use_name,
+      'callback': callback,
+      'uses' : uses || 1,
+      'max_uses' : max_uses || uses || 1
+    };
   }
 }
 
 let Tradeable = (superclass) => class extends superclass {
-  
-  get Value() {
-    return this.value || (this.value = 1);
+  constructor(...args) {
+    super(...args);
+    this.value = 1;
   }
 }
 
 let Equipment = (superclass) => class extends superclass {
   constructor(...args) {
     super(...args);
-    this.equipment_slot = "None";
+    this.slots = ["None"];
+    this.stats = new StatBlock();
   }
 }
 
 let Equipable = (superclass) => class extends superclass {
-  
   constructor(...args) {
     super(...args);
-    this.equipment_slots = [];
-  } 
+    this.equipment_slots = {};
+  }
+  
+  equip(equipment) {
+    var i;
+    for(i = 0; i < equipment.slots.length; ++i) {
+      if (!this.equipment_slots.hasOwnProperty(equipment.slots[i])) {
+        return false;
+      }
+    }
+    for(i = 0; i < equipment.slots.length; ++i) {
+      this.unequip(equipment.slots[i]);
+      this.equipment_slots[equipment.slots[i]] = equipment;
+    }
+    this.equipment_stats.add(equipment.equipment_stats);
+    return true;
+  }
+  
+  unequip(slot) {
+    var item;
+    if (this.equipment_slots.hasOwnProperty(slot)) {
+      item = this.equipment_slots[slot];
+    } else {
+      return;
+    }
+
+    for(var key in this.equipment_slots) {
+      if (this.equipment_slots.hasOwnProperty(key)) {
+        if (this.equipment_slots[key] === item) {
+          this.equipment_slots = null;
+        }
+      }
+    }
+    this.stats.subtract(item.equipment_stats);
+  }
 }
 
 let Trigger = (superclass) => class extends superclass {
-  
-  get Triggered() {
-    return this.triggered || (this.triggered = false);
-  }
-  
-  get ResetTime() {
-    return this.reset_time || (this.reset_time = 0);
+  constructor(...args) {
+    super(...args);
+    this.triggered = false;
+    this.reset_time = 0;
   }
 }
 
 let Triggerable = (superclass) => class extends superclass {
-  
-  get Triggers() {
-    return this.triggers || (this.triggers = []);
-  }
-  
-  get TriggerLogic() {
-    this.trigger_logic || (this.trigger_logic = "AND"); //OR, NOR, XOR
+  constructor(...args) {
+    super(...args);
+    this.triggers = [];
+    this.trigger_logic = "AND"; //OR, NOR, XOR
+    this.reset_time = 0;
   }
   
   isTriggered() {
@@ -982,65 +1069,58 @@ let Triggerable = (superclass) => class extends superclass {
     }
     return state;
   }
-  
-  get ResetTime() {
-    return this.reset_time || (this.reset_time = 0);
-  }
 }
 
 let Lockable = (superclass) => class extends superclass {
-
-  get Locks() {
-    return this.locks || (this.locks = []);
+  constructor(...args) {
+    super(...args);
+    this.locks = [];
+    this.open = false;
+    this.locked_description = "Locked";
+    this.unlocked_description = "Unlocked";
+    this.keys = [];
   }
   
-  get isOpen() {
-    return this.open || (this.open = false);
+  get description() {
+    return this.open ? this.unlocked_description : this.locked_description;
   }
   
-  get LockedDescription() {
-    return this.locked_description || (this.locked_description = "Locked");
+  addKey(item_name) {
+    this.keys.push(item_name);
   }
   
-  get UnlockedDescription() {
-    return this.unlocked_description || (this.unlocked_description = "Unlocked");
+  checkKey(player) {
+    for(var i = 0; i < this.keys.length; ++i) {
+      if (player.inventory.includes(this.keys[i])) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
 let Transporter = (superclass) => class extends superclass {
-  
-  get ForwardLink() {
-    return this.forward || (this.forward = null);
-  }
-  
-  get BackwardLink() {
-    return this.backward || (this.backward = null);
+  constructor(...args) {
+    super(...args);
+    this.forward = null;
+    this.backward = null;
   }
 }
 
 let Intelligent = (superclass) => class extends superclass {
-  
-  get AIState() {
-    return this.aistate || (this.aistate = "Idle");
-  }
-  
-  get Morale() {
-    return this.morale || (this.morale = 0);
-  }
-  
-  get AIScript() {
-    return this.ai_script || (this.ai_script = "ai.js");
+  constructor(...args) {
+    super(...args);
+    this.aistate = "Idle";
+    this.morale = 0;
+    this.ai_script = "ai.js";
   }
 }
 
 let Enchantable = (superclass) => class extends superclass {
-  
-  get MagicRating() {
-    return this.magic_rating || (this.magic_rating = 0);
-  }
-  
-  get MagicEffects() {
-    return this.magic_effects || (this.magic_effects = []);
+  constructor(...args) {
+    super(...args);
+    this.magic_rating = 0;
+    this.magic_effects = [];
   }
 }
 
@@ -1077,6 +1157,13 @@ class Door extends mixwith.mix(Lock).with(Ownable, Transporter) {
     super(...args);
     this.exit = false;
   }
+  
+  connectRooms(forwards, backwards) {
+    this.forward = forwards;
+    forwards.doors.push(this);
+    this.backwards = backwards;
+    backwards.doors.push(this);
+  }
 }
 
 class Mob extends mixwith.mix(Object).with(
@@ -1095,8 +1182,12 @@ class Room extends mixwith.mix(Object).with(
   Ownable) {
   constructor(...args) {
     super(...args);
-    this.forward_doors = [];
-    this.backward_doors = [];
+    this.doors = [];
+    this.features = [];
+  }
+  
+  addFeature(feature) {
+    this.features.push(feature);
   }
 }
 
@@ -1106,10 +1197,24 @@ class Combat {
 class Encounter {
 }
 
-class Adventure {
+class Adventure extends mixwith.mix(Object).with(Describable) {
+  constructor(...args) {
+    super(...args);
+    this.intro = "A fun adventure! Rewards 10Cr.";
+    this.reward = { 'Cr': 10, 'xp': 0 };
+    this.start = null;
+    this.rooms = [];
+  }
+  
+  addRoom(room) {
+    if (this.start == null) {
+      this.start = room;
+    }
+    this.rooms.push(room);
+  }
 }
 
-class Item extends mixwith(Object).with(
+class Item extends mixwith.mix(Object).with(
   Describable,
   Ownable,
   Tradeable,
@@ -1119,8 +1224,7 @@ class Item extends mixwith(Object).with(
   Usable) {
   constructor(...args) {
     super(...args);
-    
-  }    
+  }
 }
 
 var stat_names = [
@@ -1132,10 +1236,9 @@ var stat_names = [
   "endurance",
   "resistance",
   "vitality",
-  "knowledge",
+  "intellect",
   "awareness",
   "will",
-  "creativity",
   "corruption",
   "spirit",
   "fate",
@@ -1146,21 +1249,104 @@ var stat_names = [
   "psionic_manipulation"
 ];
 
+const stat_pad = stat_names.reduce(function (a, b) { return a.length > b.length ? a : b; }).length;
+
+function getTier(stat) {
+  if (!stat_names.includes(stat)) return "Null";
+  var t;
+  switch(Math.floor(this[stat] / 25)) {
+    case 0:
+      t = "Inept";
+      break;
+    case 1:
+      t = "Mediocre";
+      break;
+    case 2:
+      t = "Able";
+      break;
+    case 3:
+      t = "Competent";
+      break;
+    case 4:
+      t = "Dedicated";
+      break;
+    case 5:
+      t = "Proficient";
+      break;
+    case 6:
+      t = "Superior";
+      break;
+    case 7:
+      t = "Heroic";
+      break;
+    case 8:
+      t = "Mastered";
+      break;
+    default:
+      t = "Transcendant";
+      break;
+  }
+  return t;
+}
+
+function roll(stat_value) {
+  if (stat_value <= 1) return stat_value;
+  var min = Math.ceil(stat_value/2);
+  var max = stat_value + Math.floor(stat_value/2);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+var difficulties = {
+  'trivial' : 2, //can be hit with a 2 in a stat, 3 auto succeeds
+  'easy' : 6, //can be hit with a 4 in a stat, 12 auto succeeds
+  'simple' : 12, //can be hit with a 8 in a stat, 24 auto succeeds
+  'mundane' : 24, //can be hit with a 16 in a stat, 48 auto succeeds
+  'challenging' : 48, //can be hit with 32 in a stat, 96 auto succeeds
+  'frustrating' : 96, //can be hit with a 64 in a stat, 192 auto succeeds
+  'egregious' : 192, //can be hit with a 128 in a stat, 384 auto succeeds
+  'impossible' : 384 //can be hit with a 256 in a stat, 786 auto succeeds
+}
 
 let StatBlock = (superclass) => class extends superclass {
   constructor(...args) {
     super(...args);
-    for(var stat in stat_names) {
-      this[stat] = 1;
+    for(var stat_idx in stat_names) {
+      this[stat_names[stat_idx]] = 0;
     }
   }
 
   statBlockMessage() {
     var str = "Stats\n```";
-    for(var stat in stat_names) {
-      str += "\n" + stat +":"+"         ".substr(stat.length-4) + this[stat];
+    for(var stat_idx in stat_names) {
+      str += "\n"
+      + stat_names[stat_idx]
+      +":";
+      for(var i = 0; i < stat_pad - stat_names[stat_idx].length; ++i) {
+        str += " ";
+      }
+      str += this[stat_names[stat_idx]];
     }
     return str + "```";
+  }
+  
+  rollStat(stat) {
+    if (stat_names.includes(stat)) {
+      return roll(this[stat]);
+    } else {
+      return 0;
+    }
+  }
+  
+  add(stat_block) {
+    for(var stat_idx in stat_names) {
+      this[stat_names[stat_idx]] += stat_block[stat_names[stat_idx]];
+    }
+  }
+  
+  subtract(stat_block) {
+    for(var stat_idx in stat_names) {
+      this[stat_names[stat_idx]] -= stat_block[stat_names[stat_idx]];
+    }
   }
 }
 
@@ -1188,51 +1374,13 @@ class Levelable extends mixwith.mix(Object).with(StatBlock) {
     return true;
   }
   
-  get Level() {
+  get level() {
     return Math.floor(this.past_xp / 25);
   }
   
-  Tier(stat) {
-    if (!stat_names.includes(stat)) return "Null";
-    var t;
-    switch(Math.floor(this[stat] / 25)) {
-      case 0:
-        t = "Inept";
-        break;
-      case 1:
-        t = "Mediocre";
-        break;
-      case 2:
-        t = "Able";
-        break;
-      case 3:
-        t = "Competent";
-        break;
-      case 4:
-        t = "Dedicated";
-        break;
-      case 5:
-        t = "Proficient";
-        break;
-      case 6:
-        t = "Superior";
-        break;
-      case 7:
-        t = "Heroic";
-        break;
-      case 8:
-        t = "Mastered";
-        break;
-      default:
-        t = "Transcendant";
-        break;
-    }
-  }
-  
-  
 }
 
-class Player extends mixwith.mix(Levelable).with(Describable, Trigger, Attackable) {
+class Player extends mixwith.mix(Levelable).with(Describable, Trigger, Attackable, Equipable) {
   constructor(user_id, ...args) {
     super(...args);
     this.name = "Emanon"; 
@@ -1247,6 +1395,9 @@ class Player extends mixwith.mix(Levelable).with(Describable, Trigger, Attackabl
     this.inventory = [];
     
     this.party = null;
+    for(var stat_idx in stat_names) {
+      this[stat_names[stat_idx]] = 1;
+    }
   }
 }
 
@@ -1265,7 +1416,8 @@ StarlitExpanse.prototype.LevelUp = function(player) {
           return;
         }
         if (player.xp < 1) {
-          this.Whisper(user_id, "LevelUp Complete.");
+          this.Whisper(user_id, "You don't have any XP to spend.");
+          this.ClearQuestion(player.user_id);
           return;
         }
         var result = result.split(" ", 2);
@@ -1282,6 +1434,10 @@ StarlitExpanse.prototype.LevelUp = function(player) {
           return;
         } else {
           if (player.SpendXP(result[0], amount)) {
+            if (player.xp < 1) {
+              this.Whisper(user_id, "LevelUp Complete");
+              this.ClearQuestion(player.user_id);
+            }
             this.LevelUp(player);
             return;
           } else {
@@ -1335,5 +1491,6 @@ module.exports = {
   Equipment: Equipment,
   Door: Door,
   Trap: Trap,
-  Lock: Lock
+  Lock: Lock,
+  Difficulties: difficulties,
 };
