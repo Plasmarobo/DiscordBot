@@ -4,6 +4,7 @@ const token = process.env.DISCORD_TOKEN;
 var Exec    = require('child_process').exec;
 var Http    = require('http');
 var Score   = require('string_score');
+var Roll    = require('roll')
 var startTime = new Date();
 
 function powerCycle()
@@ -254,13 +255,10 @@ var commands = {
     }
   },
   "roll": {
-    usage: "[max value]",
-    description: "returns a random number between 1 and max value. If no max is specified it is 10",
+    usage: "[num]d[max]([+|-][mod])",
+    description: "Rolls num dice with max sides, then adds or subtracts mod",
     process: function(bot,msg,suffix) {
-      var max = 10;
-      if(suffix) max = suffix;
-      var val = Math.floor(Math.random() * max) + 1;
-      msg.channel.send(msg.author + " rolled a " + val);
+      msg.channel.send(msg.author + " rolled a " + Roll.roll(msg));
     }
   },
   "msg": {
