@@ -12,6 +12,7 @@
   "license": "GNU",
   "dependencies": {
     "bufferutil": "^3.0.3",
+    "dice": "0.0.2",
     "discord.js": "^11.3.0",
     "erlpack": "github:hammerandchisel/erlpack",
     "feedparser": "*",
@@ -23,9 +24,11 @@
     "libsodium-wrappers": "^0.7.3",
     "mongodb": "^2.1.2",
     "nock": "1.7.x",
+    "node-dice-js": "^0.1.2",
     "package.json": "^2.0.1",
     "querystring": "*",
     "request": ">=2.58.0",
+    "rpg-dice-roller": "^1.6.0",
     "sinon": "1.14.x",
     "string_score": "^0.1.22",
     "tumblr.js": "0.0.x",
@@ -35,8 +38,7 @@
     "winston": "1.0.x",
     "wolfram": "0.3.x",
     "yahoo-finance": "*",
-    "youtube-node": "1.2.x",
-    "roll": : "1.2.x"
+    "youtube-node": "1.2.x"
   },
   "main": "discord_bot.js"
 }

@@ -4,7 +4,7 @@ const token = process.env.DISCORD_TOKEN;
 var Exec    = require('child_process').exec;
 var Http    = require('http');
 var Score   = require('string_score');
-var Roll    = require('roll')
+var RpgDice = require('rpg-dice-roller');
 var startTime = new Date();
 
 function powerCycle()
@@ -258,7 +258,9 @@ var commands = {
     usage: "[num]d[max]([+|-][mod])",
     description: "Rolls num dice with max sides, then adds or subtracts mod",
     process: function(bot,msg,suffix) {
-      msg.channel.send(msg.author + " rolled a " + Roll.roll(msg));
+      var dice = new RpgDice.DiceRoller();
+      dice.roll(suffix.substr(suffix.indexOf(' ')+1));
+      var latestRoll = dice.getLog().shift();
     }
   },
   "msg": {
